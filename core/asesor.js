@@ -537,13 +537,22 @@
   function advise(points, opts = {}) {
     const m = measure(points);
     if (!m) return null;
-    const ranking = classify(m);
+    return report(m, classify(m), opts);
+  }
+
+  /** Mismo informe para una forma elegida a mano (sin foto ni medidas), p. ej. en la app móvil. */
+  function adviseShape(id, opts = {}) {
+    if (!SHAPES[id]) return null;
+    return report(null, [{ id, name: SHAPES[id].name, pct: 100, score: 1 }], opts);
+  }
+
+  function report(m, ranking, opts) {
     const main = ranking[0], second = ranking[1];
     const s = SHAPES[main.id], base = {
       measures: m,
       shape: { id: main.id, name: s.name, pct: main.pct, desc: s.desc, goal: s.goal },
       // una segunda forma cercana se menciona si está razonablemente cerca de la primera
-      close: second.score > main.score * 0.5 ? { id: second.id, name: second.name, pct: second.pct } : null,
+      close: second && second.score > main.score * 0.5 ? { id: second.id, name: second.name, pct: second.pct } : null,
       ranking: ranking.map(({ id, name, pct }) => ({ id, name, pct })),
       shapeNote: SHAPE_NOTE,
       glassesNote: GLASSES_GOAL[opts.goal] || GLASSES_GOAL.diario,
@@ -588,5 +597,5 @@
     };
   }
 
-  return { POINTS, SHAPES, RECS, RECS_MUJER, MESH, GLASSES_GOAL, BEARD_GOAL, TEXTURE_CUTS, AFRO, defaultPoints, fromLandmarks, skinSpots, measure, classify, advise };
+  return { POINTS, SHAPES, RECS, RECS_MUJER, MESH, GLASSES_GOAL, BEARD_GOAL, TEXTURE_CUTS, AFRO, defaultPoints, fromLandmarks, skinSpots, measure, classify, advise, adviseShape };
 });
