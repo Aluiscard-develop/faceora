@@ -56,6 +56,9 @@
     el("h3", "📐 Reglas para tu cuerpo y tu contraste", rep, "sec-title");
     const tips = el("ul", "", rep, "tips");
     for (const t of r.tips) el("li", t, tips);
+    el("h3", "🧪 Mitos que puedes olvidar", rep, "sec-title");
+    const myths = el("ul", "", rep, "tips");
+    for (const m of r.myths) { const li = el("li", "", myths); el("b", m.myth + ": ", li); li.append(m.truth); }
   }
 
   app.on("tab", (t) => { if (t === "estilo") render(); });

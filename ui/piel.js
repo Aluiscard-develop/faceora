@@ -43,9 +43,13 @@
     el("b", "Ejemplos: ", prods);
     prods.append(s.products.join(" · "));
     if (s.marketNote) el("p", "📍 " + s.marketNote, card, "market-note");
+    sources(card, s.sources);
+  }
+
+  function sources(card, list) {
     const src = el("details", "", card, "sources");
-    el("summary", `Estudios (${s.sources.length})`, src);
-    for (const x of s.sources) {
+    el("summary", `Estudios (${list.length})`, src);
+    for (const x of list) {
       const p = el("p", "", src);
       el("span", x.finding + " ", p);
       const a = el("a", x.cite, p);
@@ -75,6 +79,17 @@
     el("h3", "💡 Cómo usarla", rep, "sec-title");
     const tips = el("ul", "", rep, "tips");
     for (const t of r.notes) el("li", t, tips);
+
+    el("h3", "🥕 Tono de piel sano", rep, "sec-title");
+    for (const h of r.habits) {
+      const card = el("article", "", rep, "step-card");
+      const head = el("div", "", card, "step-head");
+      el("h4", h.name, head);
+      badge(h.level, head);
+      el("p", h.what, card);
+      el("p", h.caution, card, "hint");
+      sources(card, h.sources);
+    }
 
     el("h3", "💸 No gastes en esto", rep, "sec-title");
     const skip = el("div", "", rep, "skip");

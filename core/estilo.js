@@ -207,6 +207,13 @@
   /** Preguntas del test según el sexo. */
   const quiz = (sexo) => (sexo === "mujer" ? QUIZ_MUJER : QUIZ);
 
+  // Lo que se repite y la evidencia no sostiene (doc/07, E-6, E-8 y E-9). Vale para hombre y mujer.
+  const MYTHS = [
+    { myth: "«Las rayas horizontales engordan»", truth: "En varios experimentos hacían parecer igual o más delgado; depende del cuerpo (Thompson y Mikellidou 2011; Ashida et al. 2013). Llévalas si te gustan." },
+    { myth: "«Vestir de rojo te hace más atractivo»", truth: "Tres estudios con 830 hombres no lo confirmaron; si hay efecto, es pequeño (Peperkoorn et al. 2016). Elige el rojo de tu paleta por cómo te queda, no como truco." },
+    { myth: "«La marca es lo que hace verse bien»", truth: "Lo que sí se notó en un experimento fue el ajuste: la misma persona con traje a medida pareció más segura y con más éxito que con uno de confección (Univ. de Hertfordshire 2011, estudio con una sastrería). Un arreglo en el sastre rinde más que la etiqueta." },
+  ];
+
   function recommend(answers = {}, seasonId = "otono-suave", contrast = null, sexo = "hombre") {
     const fem = sexo === "mujer", table = fem ? STYLES_MUJER : STYLES;
     const ranked = Object.entries(table).map(([id, s]) => {
@@ -232,8 +239,8 @@
     });
     const body = fem ? BODY_TIPS_MUJER : BODY_TIPS, height = fem ? HEIGHT_TIPS_MUJER : HEIGHT_TIPS;
     const tips = [contrastTip(contrast, sexo), ...(body[answers.complexion] || []), ...(height[answers.altura] || [])];
-    return { styles: top, tips, roles: r, sexo: fem ? "mujer" : "hombre" };
+    return { styles: top, tips, myths: MYTHS, roles: r, sexo: fem ? "mujer" : "hombre" };
   }
 
-  return { QUIZ, QUIZ_MUJER, STYLES, STYLES_MUJER, quiz, roles, recommend, contrastTip };
+  return { QUIZ, QUIZ_MUJER, STYLES, STYLES_MUJER, MYTHS, quiz, roles, recommend, contrastTip };
 });

@@ -28,6 +28,10 @@
       finding: "32 estudios (20 aleatorizados): retinol y vitamina C reciben grado A de recomendación antiedad; factores de crecimiento, bakuchiol y otros, grado C o sin datos suficientes." },
     bissett2005: { cite: "Bissett DL et al. Niacinamide: a B vitamin that improves aging facial skin appearance. Dermatol Surg. 2005;31(7 Pt 2):860-5.", url: "https://pubmed.ncbi.nlm.nih.gov/16029679/",
       finding: "50 mujeres, media cara con niacinamida 5 % y media sin ella durante 12 semanas: mejor tono y menos manchas. Estudio financiado por un fabricante." },
+    whitehead2012: { cite: "Whitehead RD, Re D, Xiao D, Ozakinci G, Perrett DI. You are what you eat: within-subject increases in fruit and vegetable consumption confer beneficial skin-color changes. PLoS ONE. 2012;7(3):e32988.", url: "https://doi.org/10.1371/journal.pone.0032988",
+      finding: "35 personas durante 6 semanas: al comer más fruta y verdura, la piel ganó tono rojizo y amarillo (carotenoides), y con unas 3 raciones más al día la cara se veía más sana y atractiva. Financiado en parte por Unilever; casi todos los participantes eran blancos." },
+    lefevre2015: { cite: "Lefevre CE, Perrett DI. Fruit over sunbed: carotenoid skin colouration is found more attractive than melanin colouration. Q J Exp Psychol. 2015;68(2):284-93.", url: "https://research-repository.st-andrews.ac.uk/handle/10023/7430",
+      finding: "Con el mismo nivel de color, el tono de los carotenoides se prefirió al moreno de melanina, sobre todo en caras de mujer." },
     delphi: { cite: "Skincare ingredients recommended by cosmetic dermatologists: a Delphi consensus study.", url: "https://digitalscholar.lsuhsc.edu/som_facpubs/3805",
       finding: "Dermatólogos cosméticos coinciden en 23 ingredientes, entre ellos azelaico, niacinamida, retinoides y protector mineral. Parte es opinión de expertos." },
   };
@@ -109,6 +113,13 @@
     { name: "Mascarillas de carbón, “detox” y exfoliantes de grano", why: "No hay ensayos que muestren beneficio; los gránulos pueden irritar." },
   ];
 
+  // Hábitos (no productos) con el mismo criterio de evidencia que los ingredientes.
+  const HABITS = [
+    { name: "Fruta y verdura a diario (unas 3 raciones más)", level: "B", sources: ["whitehead2012", "lefevre2015"],
+      what: "Los carotenoides de la comida dan a la piel un tono más sano, que se ve más atractivo que el moreno. Se nota en unas 6 semanas.",
+      caution: "Hablamos de comida: el betacaroteno en pastillas no frenó el envejecimiento de la piel (ver abajo)." },
+  ];
+
   const COUNTRY_NOTES = {
     cr: "Comprueba en tu farmacia (Fischel, La Bomba, Sucre…). Si no tienen ese producto, vale cualquier otro con el mismo ingrediente y concentración: eso es lo que importa.",
     us: "Todos los ejemplos son de venta en EE. UU. salvo los marcados con receta.",
@@ -178,9 +189,9 @@
       am: [...new Set(am)].map((id) => step(id, tipo, pais)),
       pm: [...new Set(pm)].map((id) => step(id, tipo, pais)),
       countryNote: pais ? COUNTRY_NOTES[pais] : null,
-      notes, skip: SKIP.map((s) => ({ ...s, source: s.source ? SOURCES[s.source] : null })),
+      notes, habits: HABITS.map((h) => ({ ...h, sources: h.sources.map((s) => ({ id: s, ...SOURCES[s] })) })), skip: SKIP.map((s) => ({ ...s, source: s.source ? SOURCES[s.source] : null })),
     };
   }
 
-  return { LEVELS, SOURCES, INGREDIENTS, QUIZ, CONCERNS, SKIP, COUNTRY_NOTES, routine };
+  return { LEVELS, SOURCES, INGREDIENTS, HABITS, QUIZ, CONCERNS, SKIP, COUNTRY_NOTES, routine };
 });

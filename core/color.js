@@ -339,11 +339,23 @@
       avoid: "Melocotones, corales y marrones cálidos" },
   };
 
-  /** Maquillaje de la estación; la intensidad del acabado sale del eje de claridad. */
-  function makeup(seasonId, axes = { c: 0 }) {
+  // Lo que más favorece del maquillaje es subir el contraste de ojos y labios con la piel (Russell 2009;
+  // Jones et al. 2015), y quien mira prefiere ~40 % menos del que una se pone (Jones et al. 2014). Nivel B.
+  const MAKEUP_CONTRAST = {
+    Alto: "Tu contraste natural es alto: ojos y labios bien definidos (máscara negra, labio de color medio o intenso) te quedan naturales.",
+    Medio: "Tu contraste es medio: define ojos y labios en tonos medios; el labio intenso, para la noche.",
+    Bajo: "Tu contraste natural es bajo: define ojos y labios, pero con marrones y tonos medios en vez de negro; algo más de contraste favorece, demasiado endurece.",
+  };
+  const MAKEUP_AMOUNT = "Menos de lo que crees: en un experimento, quien miraba prefería unos 40 % menos maquillaje del que las modelos se habían puesto (Jones et al. 2014). Lo que más favorece es el contraste de ojos y labios con la piel (Russell 2009).";
+
+  /**
+   * Maquillaje de la estación; la intensidad del acabado sale del eje de claridad.
+   * @param {"Alto"|"Medio"|"Bajo"|null} [contrast]  contraste piel-pelo medido (analyze().traits.contrast)
+   */
+  function makeup(seasonId, axes = { c: 0 }, contrast = null) {
     const m = MAKEUP[SEASONS[seasonId].family];
     const finish = axes.c > 0.3 ? "Te van los labios intensos y los acabados con brillo." : axes.c < -0.3 ? "Mejor tonos difuminados y acabados satinados o mate; los colores muy vivos te endurecen." : "Tonos medios; reserva el labio intenso para la noche.";
-    return { ...m, finish };
+    return { ...m, finish, contrastTip: MAKEUP_CONTRAST[contrast] || null, amount: MAKEUP_AMOUNT };
   }
 
   const SPREAD = 0.45;

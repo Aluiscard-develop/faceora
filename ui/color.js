@@ -238,7 +238,7 @@
       li("Montura de gafas: ", j.frames.join(", "));
 
       if (app.profile.sexo === "mujer") {
-        const mk = color.makeup(s.id, r.axes);
+        const mk = color.makeup(s.id, r.axes, r.traits.contrast);
         el("h3", "💄 Maquillaje", rep, "sec-title");
         for (const [title, list] of [["Labios", mk.lips], ["Colorete", mk.blush], ["Sombras", mk.eyes]]) {
           el("h4", title, rep);
@@ -246,6 +246,8 @@
           for (const [n, hex] of list) { const c = el("div", "", row, "sw-cell"); swatch(hex, c, n, "swatch big"); el("code", n, c); }
         }
         el("p", `${mk.finish} Evita: ${mk.avoid.toLowerCase()}.`, rep, "hint");
+        if (mk.contrastTip) el("p", mk.contrastTip, rep, "hint");
+        el("p", mk.amount, rep, "hint");
       }
 
       if (app.source && app.getFaceBox()) {

@@ -93,7 +93,7 @@
     const rep = $("report-cara");
     rep.replaceChildren();
     const fem = app.profile.sexo === "mujer";
-    const r = asesor.advise(pointsInPixels(), { sexo: app.profile.sexo, hair: $("hair").value, beard: +$("beard").value, receding: $("receding").checked });
+    const r = asesor.advise(pointsInPixels(), { sexo: app.profile.sexo, hair: $("hair").value, beard: +$("beard").value, receding: $("receding").checked, goal: $("goal").value });
     app.profile.facePoints = pointsInPixels();
     if (!r) { el("p", "Los puntos están amontonados: sepáralos para poder medir.", rep, "hint"); return; }
     app.profile.face = r;
@@ -134,13 +134,16 @@
         el("h4", "Cuando la barba salga más poblada", rep, "later-title");
         picGrid(rep, r.beardsLater, "beard", dibujos.beard);
       });
+      el("p", r.beardNote, rep, "hint");
     }
     section("👓 Gafas", r.glasses, r.glassesAvoid, "glasses", (id, t) => dibujos.glasses(id, t));
+    el("p", r.glassesNote, rep, "hint");
 
     const tips = el("ul", "", rep, "tips");
     for (const t of r.tips) el("li", t, tips);
     const m = r.measures;
     el("p", `Medidas: largo ÷ ancho ${m.ratio.toFixed(2)} · frente ÷ pómulos ${m.forehead.toFixed(2)} · mandíbula ÷ pómulos ${m.jaw.toFixed(2)} · ángulo de mandíbula ${Math.round(m.jawAngle)}°`, rep, "measures");
+    el("p", r.shapeNote, rep, "hint");
     el("p", `Orientativo: son las reglas habituales de ${fem ? "peluquerías" : "barberos"} y ópticas (visagismo). Si dudas entre dos formas, mira las recomendaciones de ambas. Enséñale los dibujos a tu ${fem ? "peluquera o peluquero" : "barbero"}.`, rep, "hint");
   }
 
@@ -218,10 +221,10 @@
 
   $("advisor-reset").addEventListener("click", () => { if (app.source) { placeDefaults(); requestAdvice(); } });
   const memCara = app.memory.load("cara");
-  if (memCara) { $("hair").value = memCara.hair; $("beard").value = memCara.beard; $("receding").checked = memCara.receding; }
-  const rememberCara = () => app.memory.save("cara", { hair: $("hair").value, beard: $("beard").value, receding: $("receding").checked });
+  if (memCara) { $("hair").value = memCara.hair; $("beard").value = memCara.beard; $("receding").checked = memCara.receding; if (memCara.goal) $("goal").value = memCara.goal; }
+  const rememberCara = () => app.memory.save("cara", { hair: $("hair").value, beard: $("beard").value, receding: $("receding").checked, goal: $("goal").value });
   app.on("remember", rememberCara);
-  for (const id of ["hair", "beard", "receding"]) $(id).addEventListener("change", () => { rememberCara(); requestAdvice(); });
+  for (const id of ["hair", "beard", "receding", "goal"]) $(id).addEventListener("change", () => { rememberCara(); requestAdvice(); });
   window.addEventListener("resize", () => { if (app.tab === "cara") requestAdvice(); });
 
   function syncSexo() {

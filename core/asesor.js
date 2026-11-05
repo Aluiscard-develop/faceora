@@ -423,11 +423,29 @@
     rizado: "Pelo rizado: pide un corte por capas pensado para rizos (que no quede en triángulo) y define con crema y difusor.",
   };
 
+  // Gafas y barba según lo que buscas (doc/07, E-3 y E-4). Experimentos con personas que puntúan caras
+  // (nivel B), casi siempre caras europeas: orientativo.
+  const GLASSES_GOAL = {
+    atraer: "Para gustar: sin montura o metálicas finas. En un experimento, las de pasta completa restaban atractivo y las sin montura no (Leder et al. 2011).",
+    serio: "Para el trabajo: montura completa. Cualquier gafa hace parecer más inteligente y de fiar, y la de pasta es la que más se nota (Leder et al. 2011).",
+    diario: "Cualquier gafa te hace parecer más inteligente y de fiar; las de pasta completa restan algo de atractivo y las sin montura no (Leder et al. 2011).",
+  };
+  const BEARD_GOAL = {
+    atraer: "Para gustar: barba de 7–10 días bien perfilada. En un estudio con 351 mujeres fue la mejor valorada, aunque otro prefirió una más corta: pruébalo (Dixson y Brooks 2013; Neave y Shields 2008).",
+    serio: "Para imagen seria: barba completa y cuidada; fue la que más madurez y salud transmitió (Dixson y Brooks 2013).",
+    diario: "La barba de varios días (5–10) es la mejor valorada en los estudios; la completa transmite más madurez (Dixson y Brooks 2013).",
+  };
+  // E-1: subir el contraste de ojos y boca con la piel feminiza la cara y, en hombres, resta atractivo.
+  const CONTRAST_TIP_HOMBRE = "No te tiñas cejas ni barba más oscuras que tu pelo natural: más contraste en la cara la hace más femenina y, en hombres, resta atractivo (Russell 2009; Jones et al. 2015).";
+  // E-10: no hay estudios de que elegir por forma de cara mejore el resultado.
+  const SHAPE_NOTE = "La forma de cara es una guía de asesores, no una regla: no hay estudios que prueben que elegir el corte por ella funcione mejor, y ni con IA se acierta la forma más del ~70 % de las veces (Pasupa et al. 2019). Si algo te gusta y te ves bien, manda tu espejo.";
+
   /**
    * Informe completo.
    * @param {object} points  {id: [x, y]} en píxeles
-   * @param {{sexo?: "hombre"|"mujer", hair?: "liso"|"ondulado"|"rizado", beard?: 0|1|2, receding?: boolean}} opts
+   * @param {{sexo?: "hombre"|"mujer", hair?: "liso"|"ondulado"|"rizado", beard?: 0|1|2, receding?: boolean, goal?: "atraer"|"serio"|"diario"}} opts
    *   beard = lo poblada que sale en las mejillas (0 escasa, 1 media, 2 completa); solo cuenta para hombre.
+   *   goal = lo que más buscas; cambia el consejo de gafas y de largo de barba.
    */
   function advise(points, opts = {}) {
     const m = measure(points);
@@ -440,7 +458,10 @@
       // una segunda forma cercana se menciona si está razonablemente cerca de la primera
       close: second.score > main.score * 0.5 ? { id: second.id, name: second.name, pct: second.pct } : null,
       ranking: ranking.map(({ id, name, pct }) => ({ id, name, pct })),
+      shapeNote: SHAPE_NOTE,
+      glassesNote: GLASSES_GOAL[opts.goal] || GLASSES_GOAL.diario,
     };
+    const goal = BEARD_GOAL[opts.goal] ? opts.goal : "diario";
     const glassTip = "Gafas: el ancho total de la montura ≈ el de tus sienes, y la línea superior a la altura de las cejas o justo debajo.";
     const pickAll = (list) => list.map(([title, why]) => ({ title, why, ok: true }));
     if (opts.sexo === "mujer") {
@@ -454,7 +475,7 @@
         cuts: pickAll(r.cuts), cutsAvoid: r.cutsAvoid,
         glasses: pickAll([...r.glassesExtra, ...g.glasses]), glassesAvoid,
         earrings: pickAll(r.earrings), earringsAvoid: r.earringsAvoid,
-        beards: [], beardsLater: [], beardsAvoid: [],
+        beards: [], beardsLater: [], beardsAvoid: [], beardNote: null,
         tips,
       };
     }
@@ -464,18 +485,21 @@
     if (opts.hair && HAIR_TIPS[opts.hair]) tips.push(HAIR_TIPS[opts.hair]);
     if (opts.receding) tips.push("Con entradas, evita peinarlo todo hacia atrás y tirante: la textura hacia delante (crop) o una raya lateral desenfadada las disimula.");
     if (beard < 2) tips.push("Como la barba no sale completa en las mejillas, se priorizan estilos que no dependen de ellas; rebaja mejillas y patillas y deja más largo en mentón y bigote.");
-    tips.push(glassTip);
+    tips.push(glassTip, CONTRAST_TIP_HOMBRE);
+    const beardNote = goal === "serio" && beard < 2
+      ? "Para imagen seria la barba completa es la que más madurez transmite, pero con la tuya escasa queda mejor una de 7–10 días bien perfilada (Dixson y Brooks 2013)."
+      : BEARD_GOAL[goal];
     const pick = (list) => list.map(([title, why, need]) => ({ title, why, ok: need === undefined || need <= beard }));
     const beards = pick(r.beards);
     return {
       ...base, sexo: "hombre",
       cuts: pick(r.cuts), cutsAvoid: r.cutsAvoid,
       glasses: pick(r.glasses), glassesAvoid: r.glassesAvoid,
-      beards: beards.filter((b) => b.ok), beardsLater: beards.filter((b) => !b.ok), beardsAvoid: r.beardsAvoid,
+      beards: beards.filter((b) => b.ok), beardsLater: beards.filter((b) => !b.ok), beardsAvoid: r.beardsAvoid, beardNote,
       earrings: [], earringsAvoid: [],
       tips,
     };
   }
 
-  return { POINTS, SHAPES, RECS, RECS_MUJER, MESH, defaultPoints, fromLandmarks, measure, classify, advise };
+  return { POINTS, SHAPES, RECS, RECS_MUJER, MESH, GLASSES_GOAL, BEARD_GOAL, defaultPoints, fromLandmarks, measure, classify, advise };
 });
