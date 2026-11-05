@@ -2,14 +2,14 @@
 // paleta, joyería y drapeado virtual (tu cara con dos colores al lado para comparar tú mismo).
 (function () {
   "use strict";
-  const { color, mask: maskLib, app } = window.FA;
+  const { color, mask: maskLib, asesor, app } = window.FA;
   const { $, el, swatch } = app;
   const SVG_NS = "http://www.w3.org/2000/svg";
   const taps = $("taps");
   const LABELS = { wb: "Blanco", skin: "Piel", hair: "Pelo", eyes: "Iris" };
   const PROMPTS = { wb: "Toca algo blanco o gris claro de la foto (pared, papel, camiseta blanca).", skin: "Toca tu mejilla, donde no haya sombra ni brillo.", hair: "Toca tu pelo, en una zona sin reflejos.", eyes: "Toca el color de tu iris (amplía la foto si hace falta)." };
   const mem = app.memory.load("color") || {};
-  const st = { samples: {}, points: {}, auto: false, est: null, answers: mem.answers || {}, forced: mem.forced || null, pick: null, frame: 0 };
+  const st = { samples: {}, points: {}, auto: false, est: null, mesh: null, answers: mem.answers || {}, forced: mem.forced || null, pick: null, frame: 0 };
   const remember = () => app.memory.save("color", { answers: st.answers, forced: st.forced });
   app.on("remember", remember);
 
@@ -33,10 +33,11 @@
     const { data, width: w, height: h } = app.source;
     const fp = app.profile.facePoints, box = app.getFaceBox();
     let spots;
-    if (fp) spots = ["L", "R"].map((s) => [(fp["cheek" + s][0] * 2 + fp.chin[0]) / 3, (fp["cheek" + s][1] * 2 + fp.chin[1]) / 3]);
+    if (st.mesh) spots = st.mesh.spots;
+    else if (fp) spots = ["L", "R"].map((s) => [(fp["cheek" + s][0] * 2 + fp.chin[0]) / 3, (fp["cheek" + s][1] * 2 + fp.chin[1]) / 3]);
     else if (box) spots = [-1, 1].map((d) => [box.cx + d * 0.22 * box.width, box.top + 0.8 * box.width]);
     else return;
-    const r = box ? box.width * 0.07 : radius("skin");
+    const r = st.mesh ? st.mesh.r : box ? box.width * 0.07 : radius("skin");
     const g = gains(); // el filtro de piel se aplica con la luz ya corregida
     const isSkin = g ? (rr, gg, bb) => maskLib.isSkin(...color.applyGains([rr, gg, bb], g)) : maskLib.isSkin;
     const got = spots.map(([x, y]) => color.sampleCircle(data, w, h, x, y, r, isSkin)).filter(Boolean);
@@ -44,6 +45,21 @@
     st.samples.skin = [0, 1, 2].map((i) => got.reduce((a, c) => a + c[i], 0) / got.length);
     st.points.skin = spots[0];
     st.auto = true;
+  }
+
+  // Con MediaPipe (D-19) las mejillas y la zona de la cara salen de la malla, que no depende de la luz
+  // ni de que el fondo o la ropa parezcan piel. Mientras carga (o si falla) vale la caja por color.
+  async function refineWithMesh() {
+    const v = app.version;
+    let lm = null;
+    try { lm = await app.mp.faceLandmarks(); } catch { return; }
+    if (!lm || v !== app.version || !app.source) return;
+    const { data, width: w, height: h } = app.source;
+    st.mesh = asesor.skinSpots(lm, w, h);
+    st.est = color.estimateIlluminant(data, w, h, 4, st.mesh.box) || st.est;
+    if (!st.samples.wb) app.wbGains = gains();
+    if (st.auto || !st.samples.skin) autoSkin();
+    update();
   }
 
   function corrected(kind) {
@@ -279,11 +295,11 @@
 
   app.on("photo", (src) => {
     st.samples = {}; st.points = {}; st.auto = false; st.pick = null;
-    st.est = null;
+    st.est = null; st.mesh = null;
     if (src) estimateLight();
     app.wbGains = gains(); app.wbManual = false;
     $("color-box").disabled = !src;
-    if (src) autoSkin();
+    if (src) { autoSkin(); refineWithMesh(); }
     update();
   });
   app.on("tab", (t) => {
