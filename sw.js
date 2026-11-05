@@ -2,7 +2,7 @@
 // Solo archivos de la app (nunca fotos: no pasan por la red). Red primero, para que los cambios se vean;
 // si no hay servidor, sirve lo guardado. Su CSP propia permite connect-src 'self' (ver scripts/serve.js).
 "use strict";
-const CACHE = "espejo-v5";
+const CACHE = "faceora-v6";
 const SHELL = [
   "./", "index.html", "styles.css", "manifest.webmanifest",
   "assets/icon.svg", "assets/icon-192.png", "assets/icon-512.png",

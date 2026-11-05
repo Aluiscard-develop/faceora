@@ -176,7 +176,7 @@
       if (cut) b += text(x + 540, y + 190, cut.title, { size: 30, fill: MUTED, max: 22 }).svg;
     }
     b += text(cx, 1790, "Hecho con Faceora · tu foto no salió de tu teléfono", { size: 28, fill: SOFT, anchor: "middle" }).svg;
-    b += text(cx, 1845, "aluiscard-develop.github.io/espejo-app", { size: 28, weight: 600, fill: BRAND, anchor: "middle" }).svg;
+    b += text(cx, 1845, "aluiscard-develop.github.io/faceora", { size: 28, weight: 600, fill: BRAND, anchor: "middle" }).svg;
     return { width: SW, height: SH, svg: `<svg xmlns="http://www.w3.org/2000/svg" width="${SW}" height="${SH}" viewBox="0 0 ${SW} ${SH}">${b}</svg>` };
   }
 
