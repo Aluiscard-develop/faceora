@@ -1,5 +1,8 @@
-/* Estilo salón («atelier»): negro, marfil y champán; serif en los títulos. Fuentes del sistema: la CSP
-   no deja cargar fuentes de fuera (si Cormorant Garamond o Manrope están instaladas, se usan). */
+/* Estilo salón («atelier»): negro, marfil y champán; serif en los títulos. Las fuentes van dentro de la app
+   (assets/fonts/, OFL, solo latín): la CSP no deja cargarlas de fuera. Ver assets/fonts/README.md. */
+@font-face { font-family: "Cormorant Garamond"; src: url("assets/fonts/cormorant-garamond.woff2") format("woff2"); font-weight: 300 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Cormorant Garamond"; src: url("assets/fonts/cormorant-garamond-italic.woff2") format("woff2"); font-weight: 500; font-style: italic; font-display: swap; }
+@font-face { font-family: Manrope; src: url("assets/fonts/manrope.woff2") format("woff2"); font-weight: 200 800; font-style: normal; font-display: swap; }
 :root {
   --bg: #F7F4EF;
   --surface: #FFFFFF;
