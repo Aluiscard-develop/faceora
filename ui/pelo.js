@@ -18,7 +18,7 @@
       b.type = "button";
       b.setAttribute("role", "radio");
       b.setAttribute("aria-checked", String(st.hair === hex));
-      if (hex) swatch(hex, b, name); else el("span", "🙂", b);
+      if (hex) swatch(hex, b, name); else el("span", "", b, "swatch natural");
       el("span", name, b);
       b.addEventListener("click", () => { st.hair = hex; buildColors(); paint(); });
     }
@@ -154,7 +154,7 @@
     if (!app.source) { el("p", "Sube una foto de frente en «Mi foto» para probarte colores de pelo y barbas.", rep, "empty"); return; }
     const s = color.SEASONS[st.season], fam = s.family, rec = pelo.HAIR_COLORS[fam];
     const fem = app.profile.sexo === "mujer";
-    el("h2", fem ? "💇 Color de pelo" : "💇 Pelo y barba", rep);
+    el("h2", fem ? "Color de pelo" : "Pelo y barba", rep);
     if (st.hair) {
       const named = rec.find(([, hex]) => hex === st.hair);
       const near = rec.map(([n, hex]) => ({ n, d: color.deltaE(color.hexToLab(hex), color.hexToLab(st.hair)) })).sort((a, b) => a.d - b.d)[0];

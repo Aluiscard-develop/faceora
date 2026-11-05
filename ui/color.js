@@ -199,7 +199,7 @@
   // el test se construye una vez (no pierde el foco al responder); solo se repinta el resultado
   const rep = el("div", "", $("report-color"), "result");
   const quizBox = el("div", "", $("report-color"));
-  el("h3", "📝 Test rápido (afina el resultado)", quizBox, "sec-title");
+  el("h3", "Test rápido (afina el resultado)", quizBox, "sec-title");
   app.quiz(el("div", "", quizBox, "quiz wide"), color.QUIZ, st.answers, () => update());
 
   function render() {
@@ -238,7 +238,7 @@
       if (st.auto && st.flushed) issues.push("Una zona de tu cara salió más rojiza (rubor o reflejo): se ha usado la mediana de mejillas y frente para que no te dé más frío de lo que eres.");
       if (issues.length) {
         const warn = el("ul", "", rep, "tips warn");
-        for (const t of issues) el("li", "⚠ " + t, warn);
+        for (const t of issues) el("li", t, warn);
       }
       const alt = el("div", "", rep, "chips season-chips");
       el("span", "¿No te convence? Prueba:", alt, "hint");
@@ -256,14 +256,14 @@
 
       el("h3", "✔ Tus mejores colores (cerca de la cara: camisas, jerséis, bufandas)", rep, "sec-title");
       swatchGrid(rep, s.best);
-      el("h3", "🧱 Neutros para la base del armario (pantalones, abrigos, zapatos)", rep, "sec-title");
+      el("h3", "Neutros para la base del armario (pantalones, abrigos, zapatos)", rep, "sec-title");
       swatchGrid(rep, s.neutrals);
       el("h3", "✖ Evita cerca de la cara", rep, "sec-title");
       swatchGrid(rep, s.avoid, "avoid");
       el("p", "Si te encanta un color de la lista de evitar, llévalo lejos de la cara: pantalón, zapatillas o un accesorio.", rep, "hint");
 
       const j = r.jewelry;
-      el("h3", "💍 Joyería, reloj y metales", rep, "sec-title");
+      el("h3", "Joyería, reloj y metales", rep, "sec-title");
       const jc = el("div", "", rep, "jewel");
       const metals = el("div", "", jc, "metals");
       for (const m of j.swatch) {
@@ -281,7 +281,7 @@
 
       if (app.profile.sexo === "mujer") {
         const mk = color.makeup(s.id, r.axes, r.traits.contrast);
-        el("h3", "💄 Maquillaje", rep, "sec-title");
+        el("h3", "Maquillaje", rep, "sec-title");
         for (const [title, list] of [["Labios", mk.lips], ["Colorete", mk.blush], ["Sombras", mk.eyes]]) {
           el("h4", title, rep);
           const row = el("div", "", rep, "swatches");
@@ -293,7 +293,7 @@
       }
 
       if (app.source && (st.mesh || app.getFaceBox())) {
-        el("h3", "🪞 Compruébalo tú: drapeado virtual", rep, "sec-title");
+        el("h3", "Compruébalo tú: drapeado virtual", rep, "sec-title");
         el("p", "Mira dónde se te ven menos ojeras, la piel más uniforme y los ojos más vivos. Ese es tu lado.", rep, "hint");
         const row = el("div", "", rep, "drapes");
         drape(row, s.best[0], "Tu color");

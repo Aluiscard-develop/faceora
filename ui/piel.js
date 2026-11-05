@@ -42,7 +42,7 @@
     const prods = el("div", "", card, "products");
     el("b", "Ejemplos: ", prods);
     prods.append(s.products.join(" · "));
-    if (s.marketNote) el("p", "📍 " + s.marketNote, card, "market-note");
+    if (s.marketNote) el("p", s.marketNote, card, "market-note");
     sources(card, s.sources);
   }
 
@@ -66,21 +66,21 @@
     app.profile.piel = r;
     app.emit("profile", "piel");
     if (!Object.values(answers).some(Boolean) && !concerns.size) el("p", "Esta es la rutina básica que le sirve a casi todo el mundo. Responde a la izquierda para ajustarla.", rep, "empty");
-    if (r.countryNote) el("p", "📍 " + r.countryNote, rep, "hint");
+    if (r.countryNote) el("p", r.countryNote, rep, "hint");
     const cols = el("div", "", rep, "routine");
     const col = (title, steps) => {
       const c = el("section", "", cols, "routine-col");
       el("h2", title, c);
       steps.forEach((s, i) => stepCard(c, s, i + 1));
     };
-    col("☀️ Mañana", r.am);
-    col("🌙 Noche", r.pm);
+    col("Mañana", r.am);
+    col("Noche", r.pm);
 
-    el("h3", "💡 Cómo usarla", rep, "sec-title");
+    el("h3", "Cómo usarla", rep, "sec-title");
     const tips = el("ul", "", rep, "tips");
     for (const t of r.notes) el("li", t, tips);
 
-    el("h3", "🥕 Tono de piel sano", rep, "sec-title");
+    el("h3", "Tono de piel sano", rep, "sec-title");
     for (const h of r.habits) {
       const card = el("article", "", rep, "step-card");
       const head = el("div", "", card, "step-head");
@@ -91,7 +91,7 @@
       sources(card, h.sources);
     }
 
-    el("h3", "💸 No gastes en esto", rep, "sec-title");
+    el("h3", "No gastes en esto", rep, "sec-title");
     const skip = el("div", "", rep, "skip");
     for (const s of r.skip) {
       const c = el("article", "", skip, "skip-card");

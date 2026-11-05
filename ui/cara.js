@@ -124,19 +124,19 @@
       el("h4", "Mejor evita", rep, "avoid-title");
       picGrid(rep, bad, kind, draw, true);
     };
-    section("💇 Cortes de pelo", r.cuts, r.cutsAvoid, fem ? "cutF" : "cut", dibujos.haircut);
+    section("Cortes de pelo", r.cuts, r.cutsAvoid, fem ? "cutF" : "cut", dibujos.haircut);
     if (fem) {
       const metal = app.profile.color ? app.profile.color.jewelry.swatch[0] : undefined;
-      section("💎 Pendientes", r.earrings, r.earringsAvoid, "earring", (id, t) => dibujos.earring(id, t, metal));
+      section("Pendientes", r.earrings, r.earringsAvoid, "earring", (id, t) => dibujos.earring(id, t, metal));
     } else {
-      section("🧔 Barba", r.beards, r.beardsAvoid, "beard", dibujos.beard, () => {
+      section("Barba", r.beards, r.beardsAvoid, "beard", dibujos.beard, () => {
         if (!r.beardsLater.length) return;
         el("h4", "Cuando la barba salga más poblada", rep, "later-title");
         picGrid(rep, r.beardsLater, "beard", dibujos.beard);
       });
       el("p", r.beardNote, rep, "hint");
     }
-    section("👓 Gafas", r.glasses, r.glassesAvoid, "glasses", (id, t) => dibujos.glasses(id, t));
+    section("Gafas", r.glasses, r.glassesAvoid, "glasses", (id, t) => dibujos.glasses(id, t));
     el("p", r.glassesNote, rep, "hint");
 
     const tips = el("ul", "", rep, "tips");

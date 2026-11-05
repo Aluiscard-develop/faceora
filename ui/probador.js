@@ -185,7 +185,7 @@
   function renderGlasses() {
     const f = app.profile.face;
     if (!app.source) { el("p", "Sube una foto de frente en «Mi foto» para probarte monturas.", rep, "empty"); return; }
-    el("h2", `👓 ${GLASS_NAMES[st.glasses]}`, rep);
+    el("h2", `${GLASS_NAMES[st.glasses]}`, rep);
     if (f) {
       const g = f.glasses.find((x) => dibujos.iconFor("glasses", x.title) === st.glasses);
       const bad = f.glassesAvoid.find((x) => dibujos.iconFor("glasses", x) === st.glasses);

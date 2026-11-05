@@ -274,21 +274,23 @@
 
   // ---- portada: cómo funciona ----
   const STEPS = [
-    ["📷", "Tu foto", "Súbela o tómala con la cámara. De frente y con luz de día.", "foto"],
-    ["🎨", "Color", "Tu estación, tu paleta y si te va el oro o la plata.", "color"],
-    ["💈", "Cara", "Tu forma de cara y los cortes, la barba o los pendientes y las gafas que te favorecen.", "cara"],
-    ["👔", "Estilo", "Los estilos de ropa que mejor te van, dibujados con tus colores.", "estilo"],
-    ["🪞", "Probador", "Toca una prenda y te digo si te favorece. Pruébate monturas.", "probador"],
-    ["🧴", "Piel", "Una rutina con ingredientes que tienen estudios detrás.", "piel"],
-    ["⭐", "Resumen", "Todo en una ficha para llevar a la peluquería o de compras.", "resumen"],
+    ["Tu foto", "Súbela o tómala con la cámara. De frente y con luz de día.", "foto"],
+    ["Color", "Tu estación, tu paleta y si te va el oro o la plata.", "color"],
+    ["Cara", "Tu forma de cara y los cortes, la barba o los pendientes y las gafas que te favorecen.", "cara"],
+    ["Estilo", "Los estilos de ropa que mejor te van, dibujados con tus colores.", "estilo"],
+    ["Probador", "Toca una prenda y te digo si te favorece. Pruébate monturas.", "probador"],
+    ["Piel", "Una rutina con ingredientes que tienen estudios detrás.", "piel"],
+    ["Resumen", "Todo en una ficha para llevar a la peluquería o de compras.", "resumen"],
   ];
   const home = $("report-foto");
   app.el("h2", "Así funciona", home);
   const grid = app.el("div", "", home, "steps");
-  for (const [icon, title, text, tab] of STEPS) {
+  for (const [title, text, tab] of STEPS) {
     const b = app.el("button", "", grid, "step");
     b.type = "button";
-    app.el("span", icon, b, "step-icon").setAttribute("aria-hidden", "true");
+    // el mismo icono que su pestaña
+    const ico = document.querySelector(`#tab-${tab} .ico`);
+    if (ico) app.el("span", "", b, "step-icon").appendChild(ico.cloneNode(true));
     app.el("b", title, b);
     app.el("span", text, b);
     b.addEventListener("click", () => selectTab(tab));

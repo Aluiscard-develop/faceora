@@ -33,7 +33,7 @@
     r.styles.forEach((s, i) => {
       const card = el("article", "", rep, "style-card");
       const head = el("div", "", card, "style-head");
-      el("span", ["🥇", "🥈", "🥉"][i], head, "medal").setAttribute("aria-hidden", "true");
+      el("span", String(i + 1), head, "medal").setAttribute("aria-hidden", "true");
       el("h2", s.name, head);
       el("p", s.desc, card);
       const looks = el("div", "", card, "looks");
@@ -53,10 +53,10 @@
       for (const t of s.avoid) el("li", t, ul2);
     });
 
-    el("h3", "📐 Reglas para tu cuerpo y tu contraste", rep, "sec-title");
+    el("h3", "Reglas para tu cuerpo y tu contraste", rep, "sec-title");
     const tips = el("ul", "", rep, "tips");
     for (const t of r.tips) el("li", t, tips);
-    el("h3", "🧪 Mitos que puedes olvidar", rep, "sec-title");
+    el("h3", "Mitos que puedes olvidar", rep, "sec-title");
     const myths = el("ul", "", rep, "tips");
     for (const m of r.myths) { const li = el("li", "", myths); el("b", m.myth + ": ", li); li.append(m.truth); }
   }
