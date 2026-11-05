@@ -66,7 +66,7 @@
       list("Noche", p.pm);
     } else pending(pc, "Arma tu rutina", "piel");
 
-    el("p", "Generado en tu dispositivo con Espejo. Orientativo: reglas de asesoría de imagen; skincare con estudios citados en la app. No es consejo médico.", rep, "hint");
+    el("p", "Generado en tu dispositivo con Faceora. Orientativo: reglas de asesoría de imagen; skincare con estudios citados en la app. No es consejo médico.", rep, "hint");
   }
 
   $("print").addEventListener("click", () => { render(); window.print(); });
@@ -83,7 +83,7 @@
       c.toBlob(async (blob) => {
         if (!blob) { app.setStatus("No se pudo exportar la ficha.", true); return; }
         const bytes = png.addTextChunks(new Uint8Array(await blob.arrayBuffer()), {
-          Software: "Espejo", Comment: "noai, noimageai", Disclaimer: "No autorizado para entrenar IA / Not licensed for AI training",
+          Software: "Faceora", Comment: "noai, noimageai", Disclaimer: "No autorizado para entrenar IA / Not licensed for AI training",
         });
         const url = URL.createObjectURL(new Blob([bytes], { type: "image/png" }));
         const a = document.createElement("a");
@@ -97,7 +97,7 @@
     img.src = src;
   }
   const profile = () => { const c = app.profile.color; return { ...app.profile, makeup: c ? color.makeup(c.season.id, c.axes) : null }; };
-  $("save-ficha").addEventListener("click", () => savePng(ficha.build(profile()), "espejo-ficha.png"));
-  $("save-story").addEventListener("click", () => savePng(ficha.story(profile()), "espejo-historia.png"));
+  $("save-ficha").addEventListener("click", () => savePng(ficha.build(profile(), app.t), app.lang() === "en" ? "faceora-card.png" : "faceora-ficha.png"));
+  $("save-story").addEventListener("click", () => savePng(ficha.story(profile(), app.t), app.lang() === "en" ? "faceora-story.png" : "faceora-historia.png"));
   app.on("tab", (t) => { if (t === "resumen") render(); });
 })();

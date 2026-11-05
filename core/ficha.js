@@ -27,8 +27,12 @@
     return out;
   }
 
+  // Traducción de la ficha (D-33): la UI pasa su función de idioma a build/story; por defecto, español.
+  let T = (s) => s;
+
   function text(x, y, s, { size = 18, weight = 400, fill = INK, anchor = "start", max = 0, lh = 1.3, family = "system-ui, sans-serif", spacing = 0 } = {}) {
-    const lines = max ? wrap(s, max) : [String(s)];
+    s = T(String(s));
+    const lines = max ? wrap(s, max) : [s];
     const tspans = lines.map((l, i) => `<tspan x="${x}" dy="${i ? size * lh : 0}">${esc(l)}</tspan>`).join("");
     const ls = spacing ? ` letter-spacing="${spacing}"` : "";
     return { svg: `<text x="${x}" y="${y}" font-size="${size}" font-weight="${weight}" fill="${fill}" text-anchor="${anchor}" font-family="${family}"${ls}>${tspans}</text>`, h: lines.length * size * lh };
@@ -53,11 +57,13 @@
   /**
    * @param {{sexo?:string, makeup?:object, color?:object, face?:object, estilo?:object, piel?:object}} p
    *   app.profile; `makeup` (color.makeup) solo se usa para mujer
+   * @param {(s:string)=>string} [tr]  traduce cada texto antes de dibujarlo (idioma de la UI); por defecto, español
    * @returns {{svg:string, width:number, height:number}}
    */
-  function build(p) {
+  function build(p, tr) {
+    T = tr || ((s) => s);
     let y = PAD, body = "";
-    body += text(PAD, y + 40, "Espejo", { size: 44, weight: 800 }).svg;
+    body += text(PAD, y + 40, "Faceora", { size: 44, weight: 800 }).svg;
     body += text(PAD + 175, y + 40, "tu ficha de imagen", { size: 22, fill: ACCENT }).svg;
     y += 80;
 
@@ -132,12 +138,14 @@
    * Ficha en formato historia (1080×1920) para compartir: estación, paleta, metales y, si está, la cara con
    * su primer corte. Fondo negro y champán, como la app.
    * @param {object} p  app.profile (como build)
+   * @param {(s:string)=>string} [tr]  traducción de los textos (como build)
    * @returns {{svg:string, width:number, height:number}}
    */
-  function story(p) {
+  function story(p, tr) {
+    T = tr || ((s) => s);
     const SW = 1080, SH = 1920, cx = SW / 2;
     let b = `<rect width="${SW}" height="${SH}" fill="${NOIR}"/>`;
-    b += text(cx, 150, "ESPEJO", { size: 34, weight: 600, fill: IVORY, anchor: "middle", spacing: 14 }).svg;
+    b += text(cx, 150, "FACEORA", { size: 34, weight: 600, fill: IVORY, anchor: "middle", spacing: 14 }).svg;
     let y = 330;
     if (p.color) {
       const c = p.color;
@@ -167,7 +175,7 @@
       b += text(x + 540, y + 120, `Cara ${f.shape.name.toLowerCase()}`, { size: 52, weight: 500, fill: INK, family: SERIF }).svg;
       if (cut) b += text(x + 540, y + 190, cut.title, { size: 30, fill: MUTED, max: 22 }).svg;
     }
-    b += text(cx, 1790, "Hecho con Espejo · tu foto no salió de tu teléfono", { size: 28, fill: SOFT, anchor: "middle" }).svg;
+    b += text(cx, 1790, "Hecho con Faceora · tu foto no salió de tu teléfono", { size: 28, fill: SOFT, anchor: "middle" }).svg;
     b += text(cx, 1845, "aluiscard-develop.github.io/espejo-app", { size: 28, weight: 600, fill: BRAND, anchor: "middle" }).svg;
     return { width: SW, height: SH, svg: `<svg xmlns="http://www.w3.org/2000/svg" width="${SW}" height="${SH}" viewBox="0 0 ${SW} ${SH}">${b}</svg>` };
   }
