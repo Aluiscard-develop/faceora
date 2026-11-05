@@ -1,5 +1,7 @@
-// Pictogramas SVG generados por código (D-15): formas de cara, cortes, barbas, pendientes, monturas y conjuntos.
-// Puro: devuelve cadenas SVG con atributos de presentación (la CSP prohíbe `style=` en línea).
+// Dibujos SVG generados por código (D-15, D-28): formas de cara, cortes, barbas, pendientes, monturas y conjuntos,
+// en estilo figurín de salón: busto, rasgos con trazo fino, sombreado suave y mechones.
+// Puro: devuelve cadenas SVG con atributos de presentación (la CSP prohíbe `style=` en línea). Sin filtros ni
+// degradados: cada dibujo es autónomo y se puede repetir en la página.
 (function (root, factory) {
   const api = factory();
   if (typeof module === "object" && module.exports) module.exports = api;
@@ -7,7 +9,10 @@
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
-  const SKIN = "#E9C3A0", SKIN_LINE = "#8A6A55", HAIR = "#2B2220", INK = "#2B2220";
+  const SKIN = "#EBCBB0", SKIN_LINE = "#9C7660", SHADE = "#C99A7E", HAIR = "#2B2220", HAIR_HI = "#7A6254", INK = "#3A2A24";
+  const SHIRT = "#2E2B28", COLLAR = "#F4EFE7";
+  // Lo dibujado en la mitad izquierda, repetido en espejo a la derecha (la cara es simétrica en x = 50).
+  const mirror = (m) => m + `<g transform="translate(100 0) scale(-1 1)">${m}</g>`;
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const wrap = (vb, label, body, cls = "pic") =>
     `<svg class="${cls}" viewBox="${vb}" role="img" aria-label="${esc(label)}" xmlns="http://www.w3.org/2000/svg">${body}</svg>`;
@@ -52,31 +57,97 @@
 
   function faceShape(id, label) {
     const d = faceOutline(id);
+    // guías de visagismo: eje central y línea de pómulos
     return wrap("0 0 100 120", label || `Cara ${id}`,
-      `<path d="${d}" fill="${SKIN}" stroke="${SKIN_LINE}" stroke-width="2.5"/>`);
+      `<path d="${d}" fill="${SKIN}" stroke="${SKIN_LINE}" stroke-width="2.5"/>` +
+      `<path d="M50,6 V114 M10,60 H90" fill="none" stroke="${SKIN_LINE}" stroke-width=".8" stroke-dasharray="3 4" opacity=".7"/>`);
   }
 
-  // ---- cabeza base para cortes y barbas ----
+  // ---- cabeza base para cortes y barbas: busto de figurín ----
   const HEAD = "M50,28 C67,28 76,42 76,60 C76,80 66,96 50,96 C34,96 24,80 24,60 C24,42 33,28 50,28Z";
-  // `back` = pelo por detrás de la cabeza (melenas); `fem` = rasgos femeninos (pestañas, labios).
-  function head(inner, label, beardLayer = "", back = "", fem = false) {
-    const lips = fem
-      ? `<path d="M44,81 Q47,79 50,80.5 Q53,79 56,81 Q50,86 44,81Z" fill="#B5525A"/>`
-      : `<path d="M44,81 Q50,84 56,81" stroke="#9A4A40" stroke-width="1.8" fill="none" stroke-linecap="round"/>`;
-    const lashes = fem ? `<path d="M37,60 L35,58 M38,59 L37,57 M63,60 L65,58 M62,59 L63,57" stroke-width="1"/>` : "";
-    return wrap("0 0 100 120", label,
-      back +
-      `<path d="M40,92 L40,112 L60,112 L60,92Z" fill="${SKIN}" stroke="${SKIN_LINE}" stroke-width="1.5"/>` +
-      `<ellipse cx="23.5" cy="62" rx="4" ry="7" fill="${SKIN}" stroke="${SKIN_LINE}" stroke-width="1.5"/>` +
-      `<ellipse cx="76.5" cy="62" rx="4" ry="7" fill="${SKIN}" stroke="${SKIN_LINE}" stroke-width="1.5"/>` +
-      `<path d="${HEAD}" fill="${SKIN}" stroke="${SKIN_LINE}" stroke-width="1.5"/>` +
-      beardLayer +
-      `<g stroke="${INK}" stroke-width="1.6" stroke-linecap="round" fill="none">` +
-      `<path d="M36,55 Q41,52 45,55 M55,55 Q59,52 64,55"/><circle cx="41" cy="61" r="1.6" fill="${INK}"/><circle cx="59" cy="61" r="1.6" fill="${INK}"/>` +
-      `<path d="M50,63 L48,72 L52,72" stroke-width="1.2"/>${lashes}</g>` +
-      lips +
-      inner);
+  const EAR = `<path d="M24.6,55.5 C19,54.5 18.4,66 21,70.2 C22.6,72.8 24.6,72.2 25.6,70Z" fill="${SKIN}" stroke="${SKIN_LINE}" stroke-width="1.2"/>` +
+    `<path d="M23.4,59.4 Q21.4,63 23.4,67" fill="none" stroke="${SHADE}" stroke-width="1"/>`;
+  const EYE = `<path d="M36,61 Q41,57.6 46,60.8 Q41,63.4 36,61Z" fill="#FBF8F3"/>` +
+    `<circle cx="41" cy="60.6" r="2" fill="#4A3426"/><circle cx="41.7" cy="59.9" r=".55" fill="#FFFFFF"/>` +
+    `<path d="M35.6,60.9 Q41,56.9 46.4,60.5" fill="none" stroke="${INK}" stroke-width="1.3" stroke-linecap="round"/>`;
+  const LASHES = `<path d="M45.9,60.3 L47.6,59.1 M44.5,59 L45.6,57.6" fill="none" stroke="${INK}" stroke-width=".9" stroke-linecap="round"/>`;
+  const BROW = `<path d="M35,54.8 Q40,51.8 46.2,53.6 L46,55.2 Q40.5,54 35.6,56.4Z" fill="${HAIR}"/>`;
+  const BROW_F = `<path d="M35.4,54.6 Q40,50.8 46,53.2 L45.8,54.3 Q40.4,52.5 35.8,55.6Z" fill="${HAIR}"/>`;
+  const NOSE = `<path d="M48.6,57.5 C48.4,63 46.6,68 46.4,70.4 Q47.6,72.6 50,72.2 Q52.4,72.6 53.6,70.4" fill="none" stroke="${SHADE}" stroke-width="1.3" stroke-linecap="round"/>` +
+    `<path d="M47.6,71 Q48.4,70.2 49.2,71 M50.8,71 Q51.6,70.2 52.4,71" fill="none" stroke="${SKIN_LINE}" stroke-width=".8"/>`;
+  const LIPS = `<path d="M44.2,80.6 Q47,79.2 50,80.2 Q53,79.2 55.8,80.6 Q50,81.6 44.2,80.6Z" fill="#B87566"/>` +
+    `<path d="M45.5,81.2 Q50,85.4 54.5,81.2Z" fill="#C98A7A" opacity=".75"/>` +
+    `<path d="M44,80.7 Q50,81.8 56,80.7" fill="none" stroke="#7E4A40" stroke-width="1"/>`;
+  const LIPS_F = `<path d="M43.8,80.6 Q47,78.4 50,79.8 Q53,78.4 56.2,80.6 Q53,82 50,81.4 Q47,82 43.8,80.6Z" fill="#B4505C"/>` +
+    `<path d="M44.4,81 Q50,87 55.6,81 Q50,82.4 44.4,81Z" fill="#C9646F"/>` +
+    `<path d="M47.5,83.6 Q50,84.4 52.5,83.6" fill="none" stroke="#E8A0A8" stroke-width=".7"/>`;
+
+  // Cabeza con la forma de cara de la persona: el contorno de faceOutline, escalado para caber entre la frente
+  // y el cuello. Sin forma, la cabeza ovalada de siempre. k = ancho relativo (pelo, orejas, sombreado);
+  // ky = alto relativo de la mitad inferior (barba).
+  const f2 = (v) => +v.toFixed(3);
+  function headGeom(shape) {
+    if (!shape || !FACE_PROTOS[shape]) return { d: HEAD, t: "", k: 1, ky: 1, earDx: 0 };
+    const len = Math.min(104, FACE_PROTOS[shape].ratio * 62), s = Math.min(52 / 62, 70 / len), half = 31 * s;
+    return { d: faceOutline(shape), t: `translate(50 62) scale(${f2(s)}) translate(-50 -60)`, k: f2(half / 26), ky: f2((62 + (len / 2) * s - 60) / 36), earDx: f2(26 - half) };
   }
+
+  // `back` = pelo por detrás de la cabeza (melenas); `fem` = rasgos y escote femeninos; `shape` = forma de cara;
+  // `nape` = pelo de la nuca que cae delante de los hombros pero detrás de la cara (mullet).
+  function head(inner, label, beardLayer = "", back = "", fem = false, shape = null, nape = "") {
+    const g = headGeom(shape);
+    const fit = (m, ky = 1) => (g.k === 1 && ky === 1 ? m : `<g transform="translate(50 60) scale(${g.k} ${ky}) translate(-50 -60)">${m}</g>`);
+    const face = (attrs) => `<path d="${g.d}"${g.t ? ` transform="${g.t}"` : ""} ${attrs}/>`;
+    const bust = `<path d="M14,120 C16,109 28,103 40,101 L60,101 C72,103 84,109 86,120Z" fill="${SHIRT}"/>` +
+      (fem ? `<path d="M39,101 Q50,113 61,101Z" fill="${SKIN}" stroke="${SKIN_LINE}" stroke-width="1"/>`
+        : `<path d="M41,101 L50,111 L59,101 L56,99 L50,105 L44,99Z" fill="${COLLAR}"/>`);
+    const neck = `<path d="M41,86 C41,94 40,98 39,102 Q50,107 61,102 C60,98 59,94 59,86Z" fill="${SKIN}" stroke="${SKIN_LINE}" stroke-width="1.2"/>` +
+      `<path d="M41,90 Q50,98 59,90 L59,95 Q50,102 41,95Z" fill="${SHADE}" opacity=".45"/>`;
+    const shading = mirror(`<path d="M27.5,64 Q29.5,78 37,87" fill="none" stroke="${SHADE}" stroke-width="4" stroke-linecap="round" opacity=".28"/>`) +
+      `<path d="M46,91 Q50,92.6 54,91" fill="none" stroke="${SHADE}" stroke-width=".9" opacity=".7"/>`;
+    // segundo trazo desplazado: contorno de boceto a tinta, como dibujado a mano
+    const sketch = `<g transform="translate(.7 -.5)">${face(`fill="none" stroke="${SKIN_LINE}" stroke-width=".7" opacity=".35"`)}</g>`;
+    return wrap("0 0 100 120", label,
+      fit(back) + bust + neck + fit(nape) + mirror(g.earDx ? `<g transform="translate(${g.earDx} 0)">${EAR}</g>` : EAR) +
+      face(`fill="${SKIN}" stroke="${SKIN_LINE}" stroke-width="1.3"`) + sketch +
+      // el sombreado se recorta a la cara: en mentones estrechos se salía
+      `<clipPath id="fc-${shape && FACE_PROTOS[shape] ? shape : "base"}">${face("")}</clipPath><g clip-path="url(#fc-${shape && FACE_PROTOS[shape] ? shape : "base"})">${fit(shading)}</g>` +
+      fit(beardLayer, g.ky) +
+      mirror((fem ? BROW_F : BROW) + EYE + (fem ? LASHES : "")) + NOSE +
+      (fem ? LIPS_F : LIPS) +
+      fit(inner));
+  }
+
+  // Mechones: trazos finos recortados a la forma del pelo o la barba. El id del recorte es fijo por dibujo:
+  // si el mismo dibujo sale dos veces en la página, los dos recortes son idénticos.
+  // short = peinado hacia atrás desde la frente; long = cae desde la coronilla; beard = trazos cortos alternados.
+  const f1 = (v) => v.toFixed(1);
+  function strands(kind) {
+    const d = [];
+    if (kind === "beard") {
+      for (let row = 0, y = 64; y < 118; row++, y += 5.5) {
+        for (let x = 23 + (row % 2) * 1.6; x < 78; x += 3.2) d.push(`M${f1(x)},${f1(y)} l${x < 50 ? "-.7" : ".7"},3.6`);
+      }
+    } else if (kind === "long") {
+      for (let i = -7; i <= 7; i++) {
+        const s = i * 4.2, w = i % 2 ? 2.5 : -2.5;
+        d.push(`M${f1(50 + i * 1.5)},20 C${f1(50 + s)},34 ${f1(50 + s * 1.15 + w)},70 ${f1(50 + s * 1.25)},118`);
+      }
+    } else {
+      for (let i = 0; i < 12; i++) {
+        const x = 24 + i * 4.6, y = 52 - (i % 3) * 5;
+        d.push(`M${f1(x)},${f1(y)} C${f1(x + 2)},${f1(y - 12)} ${f1(x + 7)},${f1(y - 22)} ${f1(x + 16)},${f1(y - 28)}`);
+      }
+    }
+    return d.join(" ");
+  }
+  function textured(markup, key, kind = "short") {
+    return markup + `<clipPath id="${key}">${markup}</clipPath>` +
+      `<g clip-path="url(#${key})" fill="none" stroke="${HAIR_HI}" stroke-width="${kind === "beard" ? ".55" : ".7"}" stroke-linecap="round" opacity=".5"><path d="${strands(kind)}"/></g>`;
+  }
+  // Degradado (fade) en los laterales: pelo muy corto entre la sien y la oreja.
+  const FADE = mirror(`<path d="M24.2,46 C23.6,51 23.6,56 24.2,60.5 L27.6,58.5 C27.2,54 27.4,50 28.4,46.5Z" fill="${HAIR}" opacity=".32"/>`);
+  const FADED = new Set(["crew", "quiff", "pompadour", "fauxhawk", "crop", "sidepart", "slick", "curly", "mullet", "manbun"]);
 
   const CAP_BOTTOM = "C74,46 70,40 64,38 C56,35 44,35 36,38 C30,40 26,46 24,56Z";
   const HAIRCUTS = {
@@ -100,6 +171,17 @@
     sides: `<path d="M19,66 C17,34 33,20 50,20 C67,20 83,34 81,66 C79,56 75,47 69,42 C59,37 41,37 31,42 C25,47 21,56 19,66Z" fill="${HAIR}"/>`,
     bowl: `<path d="M22,62 C19,30 34,18 50,18 C66,18 81,30 78,62 L77,48 C68,46 32,46 23,48Z" fill="${HAIR}"/>`,
     receding: `<path d="M24,56 C22,36 30,28 36,27 C40,34 46,30 50,30 C54,30 60,34 64,27 C70,28 78,36 76,56 ${CAP_BOTTOM}" fill="${HAIR}"/>`,
+    // largos: { back, front } como los de mujer
+    longm: { back: `<path d="M16,104 C10,52 27,18 50,18 C73,18 90,52 84,104 Q50,108 16,104Z" fill="${HAIR}"/>`,
+      front: `<path d="M21,102 C15,50 30,20 50,20 C70,20 85,50 79,102 L73,100 C75,72 73,54 68,46 Q60,38 50,30 Q40,38 32,46 C27,54 25,72 27,100Z" fill="${HAIR}"/>` },
+    manbun: { back: `<circle cx="50" cy="15" r="9.5" fill="${HAIR}"/>`,
+      front: `<path d="M24,56 C22,30 36,21 50,21 C64,21 78,30 76,56 ${CAP_BOTTOM}" fill="${HAIR}"/><path d="M44,22 Q50,19 56,22" stroke="#4A3A35" stroke-width="1.6" fill="none"/>` },
+    curtainsm: { front: `<path d="M23,70 C17,38 32,19 50,19 C68,19 83,38 77,70 C76,60 73,52 68,47 Q60,42 50,32 Q40,42 32,47 C27,52 24,60 23,70Z" fill="${HAIR}"/>` },
+    mullet: { nape: `<path d="M31,78 C30,88 28,95 26,101 Q38,99 41,99 L59,99 Q62,99 74,101 C72,95 70,88 69,78Z" fill="${HAIR}"/>`,
+      front: `<path d="M24,56 C22,31 36,22 50,22 C64,22 78,31 76,56 C75,48 72,45 68,44 L64,47 L60,43 L55,47 L50,43 L45,47 L40,43 L35,47 L32,44 C28,45 25,49 24,56Z" fill="${HAIR}"/>` },
+    afro: { back: [[28, 34], [72, 34], [22, 48], [78, 48], [24, 62], [76, 62]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="10" fill="${HAIR}"/>`).join(""),
+      front: [[30, 28], [40, 21], [50, 18], [60, 21], [70, 28], [26, 40], [74, 40], [36, 31], [50, 27], [64, 31], [43, 36], [57, 36]]
+        .map(([x, y]) => `<circle cx="${x}" cy="${y}" r="8.5" fill="${HAIR}"/>`).join("") },
   };
 
   // Peinados de mujer: `back` va detrás de la cabeza (largo de la melena), `front` enmarca la cara.
@@ -129,6 +211,10 @@
       front: `<path d="M22,116 L24,44 C26,28 38,22 50,22 C62,22 74,28 76,44 L78,116 L73,116 L72,50 C70,40 60,32 50,26 C40,32 30,40 28,50 L27,116Z" fill="${HAIR}"/>` },
     ponytail: { back: `<path d="M70,30 C86,34 90,62 82,96 C80,72 76,48 64,34Z" fill="${HAIR}"/>`, front: TIGHT_CAP },
     updo: { back: `<circle cx="50" cy="19" r="11" fill="${HAIR}"/>`, front: TIGHT_CAP },
+    curlyF: { back: [[22, 40], [78, 40], [16, 58], [84, 58], [16, 76], [84, 76], [20, 94], [80, 94], [28, 104], [72, 104]]
+        .map(([x, y]) => `<circle cx="${x}" cy="${y}" r="11" fill="${HAIR}"/>`).join(""),
+      front: [[32, 26], [42, 20], [52, 18], [62, 21], [70, 28], [26, 38], [75, 38], [24, 52], [77, 52], [24, 66], [77, 66]]
+        .map(([x, y]) => `<circle cx="${x}" cy="${y}" r="8" fill="${HAIR}"/>`).join("") },
   };
 
   // Pendientes: dibujados desde el lóbulo (0,0); el derecho es el espejo del izquierdo.
@@ -183,16 +269,19 @@
   };
   const BRIDGE = `<path d="M55,22 Q60,18 65,22" fill="none"/><path d="M11,18 L2,16 M109,18 L118,16" />`;
 
+  // Reflejo del cristal: dos trazos blancos dentro de cada lente (caben en todas las monturas, también las pequeñas).
+  const GLINT = `<g stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" opacity=".9"><path d="M26,30 L31,24 M30,31 L33,27.5"/><path d="M90,30 L95,24 M94,31 L97,27.5"/></g>`;
+
   function glasses(id, label, color = INK) {
     const body = GLASSES[id] || GLASSES.rect;
     return wrap("0 0 120 50", label || id,
-      `<g fill="${color}" fill-opacity=".08" stroke="${color}" stroke-width="3.2" stroke-linejoin="round" color="${color}">${body}${BRIDGE}</g>`);
+      `<g fill="#9FB4C4" fill-opacity=".14" stroke="${color}" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" color="${color}">${body}${BRIDGE}</g>` + GLINT);
   }
 
   // ---- texto de la recomendación → dibujo ----
   const ICONS = {
     cutF: [
-      [/pixie/i, "pixie"], [/lob|bob largo/i, "lob"], [/bob/i, "bob"], [/cortina/i, "curtain"], [/flequillo recto/i, "bangs"],
+      [/rizo|shag/i, "curlyF"], [/pixie/i, "pixie"], [/lob|bob largo/i, "lob"], [/bob/i, "bob"], [/cortina/i, "curtain"], [/flequillo recto/i, "bangs"],
       [/coronilla|volumen arriba/i, "crown"], [/ondas|volumen a la altura/i, "waves"], [/tirante/i, "ponytail"],
       [/raya al centro|pegado|lisa/i, "flat"], [/flequillo lateral|raya lateral/i, "sideswept"], [/melena|capas/i, "long"],
     ],
@@ -203,6 +292,8 @@
       [/botón grande|cortos y anchos/i, "studbig"], [/botón|pequeños/i, "stud"],
     ],
     cut: [
+      [/moño|man bun/i, "manbun"], [/mullet/i, "mullet"], [/afro/i, "afro"], [/cortinas|raya al medio/i, "curtainsm"],
+      [/hasta los hombros|melena larga|melena (lisa|por)/i, "longm"], [/mandíbula|mejillas/i, "medium"],
       [/pompadour/i, "pompadour"], [/faux hawk|cresta/i, "fauxhawk"], [/quiff|tupé/i, "quiff"],
       [/curly|rizo/i, "curly"], [/crop|flequillo/i, "crop"], [/hacia atrás|tirante/i, "slick"],
       [/medio largo|ondas/i, "medium"], [/laterales (con algo de largo|medios|con algo de volumen|largos)|lados no rapados|a los lados/i, "sides"],
@@ -228,17 +319,27 @@
     return null;
   }
 
-  function haircut(id, label) {
+  // Los rizos (círculos) no llevan mechones: ya tienen textura.
+  const CURLS = new Set(["curly", "afro", "curlyF"]);
+  const LONG_STRANDS = new Set(["medium", "sides", "longm", "curtainsm"]);
+  function haircut(id, label, shape) {
     const f = HAIRCUTS_F[id];
-    return f ? head(f.front, label || id, "", f.back || "", true) : head(HAIRCUTS[id] || HAIRCUTS.crew, label || id);
+    if (f) return head(CURLS.has(id) ? f.front : textured(f.front, `pf-${id}`, id === "pixie" ? "short" : "long"), label || id, "", f.back || "", true, shape);
+    const key = HAIRCUTS[id] ? id : "crew", h = HAIRCUTS[key], front = typeof h === "string" ? h : h.front;
+    const hair = CURLS.has(key) ? front : textured(front, `pm-${key}`, LONG_STRANDS.has(key) ? "long" : "short");
+    const parts = typeof h === "string" ? {} : h;
+    return head((FADED.has(key) ? FADE : "") + hair, label || id, "", parts.back || "", false, shape, parts.nape || "");
   }
-  function earring(id, label, metal = "#C9A227") {
+  function earring(id, label, metal = "#C9A227", shape) {
     const e = EARRINGS[id] || EARRINGS.stud;
     const pair = `<g fill="${metal}" stroke="${metal}" stroke-width=".6">` +
       `<g transform="translate(23.5 68)">${e}</g><g transform="translate(76.5 68) scale(-1 1)">${e}</g></g>`;
-    return head(HAIRCUTS_F.updo.front + pair, label || id, "", HAIRCUTS_F.updo.back, true);
+    return head(textured(HAIRCUTS_F.updo.front, "pf-updo", "short") + pair, label || id, "", HAIRCUTS_F.updo.back, true, shape);
   }
-  function beard(id, label) { return head(HAIRCUTS.crew, label || id, BEARDS[id] || ""); }
+  function beard(id, label, shape) {
+    const key = BEARDS[id] ? id : "full";
+    return head(FADE + textured(HAIRCUTS.crew, "pm-crew"), label || id, textured(BEARDS[key], `pb-${key}`, "beard"), "", false, shape);
+  }
 
   // ---- conjuntos de ropa: figura sencilla rellena con colores de la paleta ----
   /**
@@ -278,7 +379,10 @@
     const mane = o.fem ? `<path d="M36,16 Q34,0 50,1 Q66,0 64,16 L67,44 Q50,48 33,44Z" fill="${HAIR}"/>` : "";
     const headG = mane + `<path d="M44,26 L56,26 L56,34 L44,34Z" fill="${SKIN}"/><circle cx="50" cy="16" r="12" fill="${SKIN}"/><path d="M38,14 Q40,2 50,3 Q61,3 62,14 Q56,8 50,9 Q43,9 38,14Z" fill="${HAIR}"/>` +
       `<circle cx="16" cy="95" r="4" fill="${SKIN}"/><circle cx="84" cy="95" r="4" fill="${SKIN}"/>`;
-    return wrap("0 0 100 180", label || "Conjunto", headG + legs + shoe + top, "pic outfit");
+    // pliegue del pantalón largo y contorno fino de ilustración en todas las piezas
+    const crease = hem || o.bottomType === "shorts" ? "" : `<path d="M41,102 L40,166 M59,102 L60,166" fill="none" stroke="#1A1814" stroke-opacity=".22" stroke-width=".8"/>`;
+    return wrap("0 0 100 180", label || "Conjunto",
+      `<g stroke="#1A1814" stroke-opacity=".3" stroke-width=".8" stroke-linejoin="round">${headG + legs + shoe + top}</g>` + crease, "pic outfit");
   }
 
   return { FACE_PROTOS, HAIRCUTS, HAIRCUTS_F, BEARDS, EARRINGS, GLASSES, faceShape, faceOutline, haircut, beard, earring, glasses, outfit, iconFor, smoothPath };

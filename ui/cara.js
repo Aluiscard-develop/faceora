@@ -124,15 +124,17 @@
       el("h4", "Mejor evita", rep, "avoid-title");
       picGrid(rep, bad, kind, draw, true);
     };
-    section("Cortes de pelo", r.cuts, r.cutsAvoid, fem ? "cutF" : "cut", dibujos.haircut);
+    // los dibujos llevan tu forma de cara
+    const shape = r.shape.id;
+    section("Cortes de pelo", r.cuts, r.cutsAvoid, fem ? "cutF" : "cut", (id, t) => dibujos.haircut(id, t, shape));
     if (fem) {
       const metal = app.profile.color ? app.profile.color.jewelry.swatch[0] : undefined;
-      section("Pendientes", r.earrings, r.earringsAvoid, "earring", (id, t) => dibujos.earring(id, t, metal));
+      section("Pendientes", r.earrings, r.earringsAvoid, "earring", (id, t) => dibujos.earring(id, t, metal, shape));
     } else {
-      section("Barba", r.beards, r.beardsAvoid, "beard", dibujos.beard, () => {
+      section("Barba", r.beards, r.beardsAvoid, "beard", (id, t) => dibujos.beard(id, t, shape), () => {
         if (!r.beardsLater.length) return;
         el("h4", "Cuando la barba salga más poblada", rep, "later-title");
-        picGrid(rep, r.beardsLater, "beard", dibujos.beard);
+        picGrid(rep, r.beardsLater, "beard", (id, t) => dibujos.beard(id, t, shape));
       });
       el("p", r.beardNote, rep, "hint");
     }

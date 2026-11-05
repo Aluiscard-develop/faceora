@@ -9,7 +9,7 @@
   const LABELS = { wb: "Blanco", skin: "Piel", hair: "Pelo", eyes: "Iris" };
   const PROMPTS = { wb: "Toca algo blanco o gris claro de la foto (pared, papel, camiseta blanca).", skin: "Toca tu mejilla, donde no haya sombra ni brillo.", hair: "Toca tu pelo, en una zona sin reflejos.", eyes: "Toca el color de tu iris (amplía la foto si hace falta)." };
   const mem = app.memory.load("color") || {};
-  const st = { samples: {}, points: {}, auto: false, est: null, mesh: null, sites: null, flushed: false, answers: mem.answers || {}, forced: mem.forced || null, pick: null, frame: 0 };
+  const st = { samples: {}, points: {}, auto: false, est: null, mesh: null, meshPending: false, sites: null, flushed: false, answers: mem.answers || {}, forced: mem.forced || null, pick: null, frame: 0 };
   const remember = () => app.memory.save("color", { answers: st.answers, forced: st.forced });
   app.on("remember", remember);
 
@@ -51,17 +51,25 @@
 
   // Con MediaPipe (D-19) las mejillas y la zona de la cara salen de la malla, que no depende de la luz
   // ni de que el fondo o la ropa parezcan piel. Mientras carga (o si falla) vale la caja por color.
+  // Mientras llega la malla no se enseña el resultado provisional de la caja por color: cambiaba a los pocos
+  // segundos y confundía. Si MediaPipe falla o tarda demasiado (equipo lento), se enseña lo que haya.
   async function refineWithMesh() {
     const v = app.version;
-    let lm = null;
-    try { lm = await app.mp.faceLandmarks(); } catch { return; }
-    if (!lm || v !== app.version || !app.source) return;
-    const { data, width: w, height: h } = app.source;
-    st.mesh = asesor.skinSpots(lm, w, h);
-    st.est = color.estimateIlluminant(data, w, h, 4, st.mesh.box) || st.est;
-    if (!st.samples.wb) app.wbGains = gains();
-    if (st.auto || !st.samples.skin) autoSkin();
-    update();
+    st.meshPending = true;
+    const giveUp = setTimeout(() => { if (v === app.version && st.meshPending) { st.meshPending = false; update(); } }, 15000);
+    try {
+      let lm = null;
+      try { lm = await app.mp.faceLandmarks(); } catch { return; }
+      if (!lm || v !== app.version || !app.source) return;
+      const { data, width: w, height: h } = app.source;
+      st.mesh = asesor.skinSpots(lm, w, h);
+      st.est = color.estimateIlluminant(data, w, h, 4, st.mesh.box) || st.est;
+      if (!st.samples.wb) app.wbGains = gains();
+      if (st.auto || !st.samples.skin) autoSkin();
+    } finally {
+      clearTimeout(giveUp);
+      if (v === app.version) { st.meshPending = false; update(); }
+    }
   }
 
   function corrected(kind) {
@@ -210,7 +218,10 @@
     const answered = Object.values(st.answers).some(Boolean);
     const hasData = answered || Object.keys(lab).length > 0;
 
-    if (!hasData) {
+    if (st.meshPending && st.auto) {
+      el("p", "Midiendo con los puntos de tu cara… (la primera vez tarda unos segundos)", rep, "empty").setAttribute("role", "status");
+      app.profile.color = null;
+    } else if (!hasData) {
       el("p", app.source ? "Midiendo…" : "Sube una foto en «Mi foto» o responde el test de abajo: con las dos cosas acierta más.", rep, "empty");
       app.profile.color = null;
     } else {
@@ -321,7 +332,7 @@
 
   app.on("photo", (src) => {
     st.samples = {}; st.points = {}; st.auto = false; st.pick = null;
-    st.est = null; st.mesh = null; st.sites = null; st.flushed = false;
+    st.est = null; st.mesh = null; st.meshPending = false; st.sites = null; st.flushed = false;
     if (src) estimateLight();
     app.wbGains = gains(); app.wbManual = false;
     $("color-box").disabled = !src;

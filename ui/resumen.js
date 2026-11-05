@@ -41,9 +41,9 @@
       const row = el("div", "", fc, "sum-pics");
       const add = (svg, cap) => { const fig = el("figure", "", row); pic(svg, fig); el("figcaption", cap, fig); };
       const fem = f.sexo === "mujer";
-      for (const cut of f.cuts.slice(0, 2)) { const id = dibujos.iconFor(fem ? "cutF" : "cut", cut.title); if (id) add(dibujos.haircut(id, cut.title), cut.title); }
-      const b = f.beards[0]; if (b) { const id = dibujos.iconFor("beard", b.title); if (id) add(dibujos.beard(id, b.title), b.title); }
-      const er = f.earrings[0]; if (er) { const id = dibujos.iconFor("earring", er.title); if (id) add(dibujos.earring(id, er.title, c && c.jewelry.swatch[0]), er.title); }
+      for (const cut of f.cuts.slice(0, 2)) { const id = dibujos.iconFor(fem ? "cutF" : "cut", cut.title); if (id) add(dibujos.haircut(id, cut.title, f.shape.id), cut.title); }
+      const b = f.beards[0]; if (b) { const id = dibujos.iconFor("beard", b.title); if (id) add(dibujos.beard(id, b.title, f.shape.id), b.title); }
+      const er = f.earrings[0]; if (er) { const id = dibujos.iconFor("earring", er.title); if (id) add(dibujos.earring(id, er.title, c && c.jewelry.swatch[0], f.shape.id), er.title); }
       const g = f.glasses[0]; if (g) { const id = dibujos.iconFor("glasses", g.title); if (id) add(dibujos.glasses(id, g.title), g.title); }
       el("p", `✖ Evita: ${f.cutsAvoid[0]}`, fc, "hint");
     } else pending(fc, "Marca tu cara", "cara");
@@ -72,9 +72,7 @@
   $("print").addEventListener("click", () => { render(); window.print(); });
 
   // SVG → imagen → canvas → PNG re-codificado (sin EXIF) con la marca noai.
-  $("save-ficha").addEventListener("click", () => {
-    const c = app.profile.color;
-    const { svg, width, height } = ficha.build({ ...app.profile, makeup: c ? color.makeup(c.season.id, c.axes) : null });
+  function savePng({ svg, width, height }, filename) {
     const img = new Image();
     const src = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
     img.onload = () => {
@@ -90,13 +88,16 @@
         const url = URL.createObjectURL(new Blob([bytes], { type: "image/png" }));
         const a = document.createElement("a");
         a.href = url;
-        a.download = "espejo-ficha.png";
+        a.download = filename;
         a.click();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
       }, "image/png");
     };
     img.onerror = () => { URL.revokeObjectURL(src); app.setStatus("No se pudo dibujar la ficha.", true); };
     img.src = src;
-  });
+  }
+  const profile = () => { const c = app.profile.color; return { ...app.profile, makeup: c ? color.makeup(c.season.id, c.axes) : null }; };
+  $("save-ficha").addEventListener("click", () => savePng(ficha.build(profile()), "espejo-ficha.png"));
+  $("save-story").addEventListener("click", () => savePng(ficha.story(profile()), "espejo-historia.png"));
   app.on("tab", (t) => { if (t === "resumen") render(); });
 })();

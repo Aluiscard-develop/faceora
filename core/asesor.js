@@ -439,6 +439,65 @@
     },
   };
 
+  // Cortes largos de hombre por forma de cara (D-31). Reglas de barbería, como el resto de RECS (orientativas).
+  const LONG_CUTS = {
+    ovalada: { cuts: [["Melena hasta los hombros con raya al medio", "tu forma admite casi cualquier largo"],
+      ["Moño (man bun) con laterales cortos", "despeja la cara y la deja protagonista"],
+      ["Mullet moderno con laterales en degradado", "tu forma lo aguanta; pide que el largo de atrás quede limpio"]] },
+    redonda: { cuts: [["Moño alto (man bun) con laterales cortos", "el volumen arriba alarga y los lados cortos no ensanchan"]],
+      avoid: ["Melena a la altura de las mejillas (redondea más)"] },
+    cuadrada: { cuts: [["Melena hasta los hombros con ondas", "las ondas suavizan la mandíbula"],
+      ["Cortinas (raya al medio) con textura", "líneas suaves que rompen los ángulos"]] },
+    rectangular: { cuts: [["Cortinas (raya al medio) con volumen a los lados", "ensancha sin alargar"]],
+      avoid: ["Melena larga y lisa (alarga más)"] },
+    alargada: { cuts: [["Cortinas (raya al medio) con volumen a los lados", "ensancha y acorta visualmente"]],
+      avoid: ["Melena larga y lisa (alarga más)", "Moño alto (suma altura)"] },
+    corazon: { cuts: [["Melena hasta la mandíbula", "da peso abajo y equilibra la frente"],
+      ["Mullet moderno", "el largo de atrás llena la zona del mentón"]] },
+    diamante: { cuts: [["Cortinas (raya al medio) con flequillo largo", "ensancha la frente frente a los pómulos"],
+      ["Melena hasta los hombros", "llena la zona de la mandíbula"]] },
+    triangular: { cuts: [["Moño (man bun) con volumen arriba", "suma arriba lo que la mandíbula tiene abajo"]],
+      avoid: ["Mullet (más peso abajo)"] },
+  };
+  for (const [id, x] of Object.entries(LONG_CUTS)) {
+    RECS[id].cuts.push(...x.cuts);
+    RECS[id].cutsAvoid.push(...(x.avoid || []));
+  }
+
+  // Tipo de pelo (D-31): cortes propios de cada textura y aviso en los que piden otra. Reglas de peluquería.
+  const TEXTURE_CUTS = {
+    hombre: {
+      rizado: [["Curly top con degradado (rizos arriba, lados cortos)", "aprovecha tu rizo: volumen sin secador"]],
+      ondulado: [["Medio largo con textura natural", "deja que la onda haga el trabajo"]],
+    },
+    mujer: {
+      rizado: [["Corte por capas para rizos (que no quede en triángulo)", "reparte el volumen del rizo"],
+        ["Shag rizado con flequillo", "capas cortas arriba que definen el rizo"]],
+      ondulado: [["Melena media con ondas naturales", "capas largas que marcan la onda"]],
+    },
+  };
+  // El afro corto suma anchura: solo donde la anchura favorece.
+  const AFRO = ["Afro corto redondeado", "forma limpia que sigue tu rizo y da anchura"];
+  const AFRO_OK = new Set(["ovalada", "alargada", "rectangular", "diamante"]);
+  const TEXTURE_CLASH = [
+    { re: /quiff|tupé|pompadour|cresta|faux hawk/i, hair: ["rizado"], note: "Con pelo rizado, el mismo volumen se consigue con un curly top, sin secador." },
+    { re: /raya lateral|hacia atrás|side part/i, hair: ["rizado"], note: "Con pelo rizado cuesta mantener la raya marcada: pide que respeten y definan tu rizo." },
+    { re: /cortinas|raya al medio/i, hair: ["rizado"], note: "Con pelo rizado, pide capas para que los rizos no se abran." },
+    { re: /lisa|liso|pegado/i, hair: ["rizado", "ondulado"], note: "Con tu pelo, liso del todo pide plancha cada día: mejor una versión con textura." },
+  ];
+
+  /** Cortes para tu tipo de pelo primero; los que piden otra textura llevan el aviso en `why`. */
+  function forHair(cuts, hair, sexo, shapeId) {
+    if (!hair) return cuts;
+    const own = [...((TEXTURE_CUTS[sexo] || {})[hair] || [])];
+    if (sexo === "hombre" && hair === "rizado" && AFRO_OK.has(shapeId)) own.push(AFRO);
+    const marked = cuts.map((c) => {
+      const clash = TEXTURE_CLASH.find((x) => x.hair.includes(hair) && x.re.test(c.title));
+      return clash ? { ...c, why: `${c.why}. ${clash.note}`, hairClash: true } : c;
+    });
+    return [...own.map(([title, why]) => ({ title, why, ok: true, forHair: hair })), ...marked];
+  }
+
   const HAIR_TIPS = {
     liso: "Pelo liso: el tupé y el quiff necesitan secador hacia arriba y pomada o cera mate para aguantar.",
     ondulado: "Pelo ondulado: deja 5–8 cm arriba y aprovecha la textura; una crema de peinado ligera basta.",
@@ -500,7 +559,7 @@
       const glassesAvoid = main.id === "corazon" ? [...g.glassesAvoid, "Ojo de gato muy marcado (carga la parte de arriba)"] : g.glassesAvoid;
       return {
         ...base, sexo: "mujer",
-        cuts: pickAll(r.cuts), cutsAvoid: r.cutsAvoid,
+        cuts: forHair(pickAll(r.cuts), opts.hair, "mujer", main.id), cutsAvoid: r.cutsAvoid,
         glasses: pickAll([...r.glassesExtra, ...g.glasses]), glassesAvoid,
         earrings: pickAll(r.earrings), earringsAvoid: r.earringsAvoid,
         beards: [], beardsLater: [], beardsAvoid: [], beardNote: null,
@@ -521,7 +580,7 @@
     const beards = pick(r.beards);
     return {
       ...base, sexo: "hombre",
-      cuts: pick(r.cuts), cutsAvoid: r.cutsAvoid,
+      cuts: forHair(pick(r.cuts), opts.hair, "hombre", main.id), cutsAvoid: r.cutsAvoid,
       glasses: pick(r.glasses), glassesAvoid: r.glassesAvoid,
       beards: beards.filter((b) => b.ok), beardsLater: beards.filter((b) => !b.ok), beardsAvoid: r.beardsAvoid, beardNote,
       earrings: [], earringsAvoid: [],
@@ -529,5 +588,5 @@
     };
   }
 
-  return { POINTS, SHAPES, RECS, RECS_MUJER, MESH, GLASSES_GOAL, BEARD_GOAL, defaultPoints, fromLandmarks, skinSpots, measure, classify, advise };
+  return { POINTS, SHAPES, RECS, RECS_MUJER, MESH, GLASSES_GOAL, BEARD_GOAL, TEXTURE_CUTS, AFRO, defaultPoints, fromLandmarks, skinSpots, measure, classify, advise };
 });
