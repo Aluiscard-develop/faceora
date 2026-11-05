@@ -134,14 +134,31 @@
   }
 
   // ---- drapeado virtual ----
+  // Se pinta con la misma corrección de luz que las medidas (con una lámpara, la cara salía naranja y
+  // «Tu color» parecía no favorecer) y se encuadra con la malla si está (la caja por piel se une al cuello).
+  let drapeSrc = null, drapeKey = "";
+  function drapeSource() {
+    const g = gains();
+    if (!g) return $("photo");
+    const key = app.version + ":" + g.join(",");
+    if (key !== drapeKey) {
+      const { data, width: w, height: h } = app.source;
+      drapeSrc = drapeSrc || document.createElement("canvas");
+      drapeSrc.width = w; drapeSrc.height = h;
+      drapeSrc.getContext("2d").putImageData(new ImageData(color.correctImage(data, g), w, h), 0, 0);
+      drapeKey = key;
+    }
+    return drapeSrc;
+  }
+
   function drape(parent, fill, label, metal) {
     const fig = el("figure", "", parent, "drape");
     const c = el("canvas", "", fig);
     const W = 180, H = 220;
     c.width = W; c.height = H;
     const g = c.getContext("2d");
-    const box = app.getFaceBox();
-    const src = $("photo");
+    const box = st.mesh ? st.mesh.face : app.getFaceBox();
+    const src = drapeSource();
     const fw = box.width * 1.9, fx = box.cx - fw / 2, fy = box.top - box.width * 0.45, fh = fw * (H / W);
     g.fillStyle = fill;
     g.fillRect(0, 0, W, H);
@@ -275,7 +292,7 @@
         el("p", mk.amount, rep, "hint");
       }
 
-      if (app.source && app.getFaceBox()) {
+      if (app.source && (st.mesh || app.getFaceBox())) {
         el("h3", "🪞 Compruébalo tú: drapeado virtual", rep, "sec-title");
         el("p", "Mira dónde se te ven menos ojeras, la piel más uniforme y los ojos más vivos. Ese es tu lado.", rep, "hint");
         const row = el("div", "", rep, "drapes");

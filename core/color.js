@@ -224,6 +224,12 @@
     return { lab: [L, C * Math.cos(rad), C * Math.sin(rad)], flushed, n: ok.length };
   }
 
+  // Subtono: el neutro es la mediana del tono de piel medido con este mismo proceso en las 102 caras del
+  // Face Research Lab London Set (DeBruine y Jones 2017, CC BY 4.0, doi:10.6084/m9.figshare.5047666):
+  // 46°, con desviación típica de 7°. Con el neutro anterior (59°, sin calibrar) 96 de 102 salían «frío»
+  // y ninguna «cálido»; con 46° salen 35 / 27 / 40. Una sola cámara y estudio: orientativo.
+  const HUE_NEUTRAL = 46, HUE_SPAN = 11;
+
   /**
    * Ejes a partir de lo medido en la foto (Lab ya con balance de blancos). Cualquiera puede faltar.
    * Calidez: ángulo de tono de la piel (más amarillo = más cálido). Profundidad: L* de piel y pelo.
@@ -231,7 +237,7 @@
    */
   function photoAxes({ skin, hair, eyes } = {}) {
     const out = { w: null, d: null, c: null };
-    if (skin) out.w = clamp((hue(skin) - 59) / 11);
+    if (skin) out.w = clamp((hue(skin) - HUE_NEUTRAL) / HUE_SPAN);
     if (skin && hair) out.d = clamp(0.4 * ((60 - skin[0]) / 18) + 0.6 * ((38 - hair[0]) / 20));
     else if (skin) out.d = clamp((60 - skin[0]) / 18);
     else if (hair) out.d = clamp((38 - hair[0]) / 20);
