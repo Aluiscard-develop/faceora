@@ -205,6 +205,25 @@
     return out;
   }
 
+  // ---- piel medida en varias zonas ----
+  // El rubor (o un reflejo) es local: una mejilla puede salir mucho más roja que el resto de la cara y,
+  // como el subtono sale del tono (hue), la empujaba a «frío». Con varias zonas (mejillas y frente) se usa
+  // la mediana de luminosidad, croma y tono: una zona rara no arrastra el resultado.
+  const mid = (arr) => { const s = [...arr].sort((x, y) => x - y), n = s.length; return n % 2 ? s[n >> 1] : (s[n / 2 - 1] + s[n / 2]) / 2; };
+
+  /**
+   * @param {(number[]|null)[]} labs  Lab de cada zona (ya con balance de blancos); null = zona sin piel
+   * @returns {{lab:number[], flushed:boolean, n:number}|null}  flushed: alguna zona bastante más roja que el resto
+   */
+  function robustSkin(labs) {
+    const ok = labs.filter(Boolean);
+    if (!ok.length) return null;
+    const h = mid(ok.map(hue)), C = mid(ok.map(chroma)), L = mid(ok.map((x) => x[0])), rad = (h * Math.PI) / 180;
+    const aMid = mid(ok.map((x) => x[1]));
+    const flushed = ok.length >= 3 && ok.some((x) => hue(x) < h - 8 && x[1] > aMid + 4);
+    return { lab: [L, C * Math.cos(rad), C * Math.sin(rad)], flushed, n: ok.length };
+  }
+
   /**
    * Ejes a partir de lo medido en la foto (Lab ya con balance de blancos). Cualquiera puede faltar.
    * Calidez: ángulo de tono de la piel (más amarillo = más cálido). Profundidad: L* de piel y pelo.
@@ -435,7 +454,7 @@
 
   return {
     rgbToLab, labToRgb, hexToRgb, rgbToHex, hexToLab, chroma, hue, deltaE,
-    sampleCircle, whiteBalance, applyGains, estimateIlluminant, autoGains, correctImage, photoQuality,
+    sampleCircle, whiteBalance, applyGains, estimateIlluminant, autoGains, correctImage, photoQuality, robustSkin,
     QUIZ, quizAxes, photoAxes, combineAxes, SEASONS, METALS, MAKEUP, classify, analyze, judge, jewelry, makeup,
   };
 });

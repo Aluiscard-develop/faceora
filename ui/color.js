@@ -9,7 +9,7 @@
   const LABELS = { wb: "Blanco", skin: "Piel", hair: "Pelo", eyes: "Iris" };
   const PROMPTS = { wb: "Toca algo blanco o gris claro de la foto (pared, papel, camiseta blanca).", skin: "Toca tu mejilla, donde no haya sombra ni brillo.", hair: "Toca tu pelo, en una zona sin reflejos.", eyes: "Toca el color de tu iris (amplía la foto si hace falta)." };
   const mem = app.memory.load("color") || {};
-  const st = { samples: {}, points: {}, auto: false, est: null, mesh: null, answers: mem.answers || {}, forced: mem.forced || null, pick: null, frame: 0 };
+  const st = { samples: {}, points: {}, auto: false, est: null, mesh: null, sites: null, flushed: false, answers: mem.answers || {}, forced: mem.forced || null, pick: null, frame: 0 };
   const remember = () => app.memory.save("color", { answers: st.answers, forced: st.forced });
   app.on("remember", remember);
 
@@ -40,6 +40,8 @@
     const r = st.mesh ? st.mesh.r : box ? box.width * 0.07 : radius("skin");
     const g = gains(); // el filtro de piel se aplica con la luz ya corregida
     const isSkin = g ? (rr, gg, bb) => maskLib.isSkin(...color.applyGains([rr, gg, bb], g)) : maskLib.isSkin;
+    // con la malla se mide también la frente: el subtono sale de la mediana de todas las zonas
+    st.sites = st.mesh ? st.mesh.sites.map(([x, y]) => color.sampleCircle(data, w, h, x, y, r, isSkin)) : null;
     const got = spots.map(([x, y]) => color.sampleCircle(data, w, h, x, y, r, isSkin)).filter(Boolean);
     if (!got.length) return;
     st.samples.skin = [0, 1, 2].map((i) => got.reduce((a, c) => a + c[i], 0) / got.length);
@@ -65,7 +67,12 @@
   function corrected(kind) {
     const rgb = st.samples[kind];
     if (!rgb) return null;
-    return color.applyGains(rgb, gains());
+    const g = gains();
+    if (kind === "skin" && st.auto && st.sites) {
+      const rs = color.robustSkin(st.sites.map((s) => s && color.rgbToLab(color.applyGains(s, g))));
+      if (rs) { st.flushed = rs.flushed; return color.labToRgb(rs.lab); }
+    }
+    return color.applyGains(rgb, g);
   }
 
   // ---- marcas sobre la foto ----
@@ -110,7 +117,7 @@
     if (!rgb) return;
     st.samples[st.pick] = rgb;
     st.points[st.pick] = [x, y];
-    if (st.pick === "skin") st.auto = false;
+    if (st.pick === "skin") { st.auto = false; st.sites = null; st.flushed = false; }
     if (st.pick === "wb") { app.wbGains = gains(); app.wbManual = true; } // el probador lo aplica a las prendas de esta foto
     setPick(null);
     update();
@@ -210,9 +217,11 @@
       gauge(gauges, "Intensidad", r.axes.c, "Suave", "Medio", "Intenso");
       if (r.traits.contrast) el("p", `Contraste entre tu piel y tu pelo: ${r.traits.contrast}`, gauges, "hint");
 
-      if (r.quality.issues.length) {
+      const issues = [...r.quality.issues];
+      if (st.auto && st.flushed) issues.push("Una zona de tu cara salió más rojiza (rubor o reflejo): se ha usado la mediana de mejillas y frente para que no te dé más frío de lo que eres.");
+      if (issues.length) {
         const warn = el("ul", "", rep, "tips warn");
-        for (const t of r.quality.issues) el("li", "⚠ " + t, warn);
+        for (const t of issues) el("li", "⚠ " + t, warn);
       }
       const alt = el("div", "", rep, "chips season-chips");
       el("span", "¿No te convence? Prueba:", alt, "hint");
@@ -295,7 +304,7 @@
 
   app.on("photo", (src) => {
     st.samples = {}; st.points = {}; st.auto = false; st.pick = null;
-    st.est = null; st.mesh = null;
+    st.est = null; st.mesh = null; st.sites = null; st.flushed = false;
     if (src) estimateLight();
     app.wbGains = gains(); app.wbManual = false;
     $("color-box").disabled = !src;

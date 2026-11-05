@@ -53,22 +53,27 @@
   // de las gafas (los puntos 118/347 caían dentro del cristal) y por encima de la barba. La caja de la cara por color de piel se une con cuello y brazos en fotos
   // reales y su «mejilla» caía en la barba.
   const CHEEK_SKIN = [[50, 101, 205], [280, 330, 425]];
+  // Frente: centro y los dos lados, por encima de las cejas (sin gafas ni barba; el flequillo lo descarta
+  // el filtro de piel).
+  const FOREHEAD_SKIN = [[151], [108], [337]];
 
   /**
    * Dónde medir la piel y qué zona es cara + pelo (para estimar la luz sin ella), desde los landmarks.
-   * @returns {{spots: number[][], r: number, box: {x0:number,y0:number,x1:number,y1:number}}}  en píxeles
+   * spots: las dos mejillas (izquierda primero); sites: mejillas + 3 puntos de frente, para la mediana.
+   * @returns {{spots: number[][], sites: number[][], r: number, box: {x0:number,y0:number,x1:number,y1:number}}}  en píxeles
    */
   function skinSpots(lm, w, h) {
     const P = (i) => [lm[i].x * w, lm[i].y * h];
-    const spots = CHEEK_SKIN.map((ids) => {
+    const center = (ids) => {
       const ps = ids.map(P);
       return [ps.reduce((a, p) => a + p[0], 0) / ps.length, ps.reduce((a, p) => a + p[1], 0) / ps.length];
-    }).sort((a, b) => a[0] - b[0]);
+    };
+    const spots = CHEEK_SKIN.map(center).sort((a, b) => a[0] - b[0]);
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     for (const { x, y } of lm) { x0 = Math.min(x0, x * w); x1 = Math.max(x1, x * w); y0 = Math.min(y0, y * h); y1 = Math.max(y1, y * h); }
     const fw = dist(P(MESH.cheek[0]), P(MESH.cheek[1])), fh = y1 - y0;
     // se amplía para cubrir el pelo (arriba y a los lados) y la barba (abajo)
-    return { spots, r: 0.05 * fw, box: { x0: x0 - 0.15 * fw, x1: x1 + 0.15 * fw, y0: y0 - 0.35 * fh, y1: y1 + 0.1 * fh } };
+    return { spots, sites: [...spots, ...FOREHEAD_SKIN.map(center)], r: 0.05 * fw, box: { x0: x0 - 0.15 * fw, x1: x1 + 0.15 * fw, y0: y0 - 0.35 * fh, y1: y1 + 0.1 * fh } };
   }
 
   // Ángulo en `v` entre los segmentos v→a y v→b, en grados.
