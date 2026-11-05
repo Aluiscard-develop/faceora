@@ -9,7 +9,7 @@
   const LABELS = { wb: "Blanco", skin: "Piel", hair: "Pelo", eyes: "Iris" };
   const PROMPTS = { wb: "Toca algo blanco o gris claro de la foto (pared, papel, camiseta blanca).", skin: "Toca tu mejilla, donde no haya sombra ni brillo.", hair: "Toca tu pelo, en una zona sin reflejos.", eyes: "Toca el color de tu iris (amplía la foto si hace falta)." };
   const mem = app.memory.load("color") || {};
-  const st = { samples: {}, points: {}, auto: false, answers: mem.answers || {}, forced: mem.forced || null, pick: null, frame: 0 };
+  const st = { samples: {}, points: {}, auto: false, est: null, answers: mem.answers || {}, forced: mem.forced || null, pick: null, frame: 0 };
   const remember = () => app.memory.save("color", { answers: st.answers, forced: st.forced });
   app.on("remember", remember);
 
@@ -18,6 +18,15 @@
     const w = app.source.width;
     return Math.max(2, w * { wb: 0.012, skin: 0.018, hair: 0.012, eyes: 0.004 }[kind]);
   }
+
+  // Luz de toda la foto sin la cara ni el pelo (su piel rojiza la haría pasar por cálida).
+  function estimateLight() {
+    const { data, width: w, height: h } = app.source, box = app.getFaceBox();
+    const skip = box && { x0: box.cx - 0.75 * box.width, x1: box.cx + 0.75 * box.width, y0: box.top - 0.6 * box.width, y1: box.top + 1.6 * box.width };
+    st.est = color.estimateIlluminant(data, w, h, 4, skip) || color.estimateIlluminant(data, w, h, 4);
+  }
+  // Blanco tocado a mano > balance automático > nada.
+  const gains = () => (st.samples.wb ? color.whiteBalance(st.samples.wb) : st.est ? color.autoGains(st.est.illuminant) : null);
 
   // Mejillas a partir de la caja de piel (o de los puntos de «Cara» si ya están puestos).
   function autoSkin() {
@@ -28,7 +37,9 @@
     else if (box) spots = [-1, 1].map((d) => [box.cx + d * 0.22 * box.width, box.top + 0.8 * box.width]);
     else return;
     const r = box ? box.width * 0.07 : radius("skin");
-    const got = spots.map(([x, y]) => color.sampleCircle(data, w, h, x, y, r, maskLib.isSkin)).filter(Boolean);
+    const g = gains(); // el filtro de piel se aplica con la luz ya corregida
+    const isSkin = g ? (rr, gg, bb) => maskLib.isSkin(...color.applyGains([rr, gg, bb], g)) : maskLib.isSkin;
+    const got = spots.map(([x, y]) => color.sampleCircle(data, w, h, x, y, r, isSkin)).filter(Boolean);
     if (!got.length) return;
     st.samples.skin = [0, 1, 2].map((i) => got.reduce((a, c) => a + c[i], 0) / got.length);
     st.points.skin = spots[0];
@@ -38,7 +49,7 @@
   function corrected(kind) {
     const rgb = st.samples[kind];
     if (!rgb) return null;
-    return color.applyGains(rgb, st.samples.wb ? color.whiteBalance(st.samples.wb) : null);
+    return color.applyGains(rgb, gains());
   }
 
   // ---- marcas sobre la foto ----
@@ -84,7 +95,7 @@
     st.samples[st.pick] = rgb;
     st.points[st.pick] = [x, y];
     if (st.pick === "skin") st.auto = false;
-    if (st.pick === "wb") app.wbGains = color.whiteBalance(rgb); // el probador lo aplica a las prendas de esta foto
+    if (st.pick === "wb") { app.wbGains = gains(); app.wbManual = true; } // el probador lo aplica a las prendas de esta foto
     setPick(null);
     update();
   });
@@ -163,7 +174,8 @@
       el("p", app.source ? "Midiendo…" : "Sube una foto en «Mi foto» o responde el test de abajo: con las dos cosas acierta más.", rep, "empty");
       app.profile.color = null;
     } else {
-      const r = color.analyze(lab, st.answers, st.forced);
+      const quality = color.photoQuality(Object.keys(lab).length ? st.est : null, !!st.samples.wb);
+      const r = color.analyze(lab, st.answers, st.forced, quality);
       app.profile.color = r;
       app.emit("profile", "color");
       const s = r.season;
@@ -172,6 +184,7 @@
       const txt = el("div", "", hero);
       el("p", "Tu estación", txt, "kicker");
       el("h2", s.name, txt);
+      if (r.between) el("p", `Estás entre ${s.name} y ${r.between}: prueba las dos con el drapeado de abajo.`, txt, "kicker");
       el("p", s.desc, txt);
       const strip = el("div", "", txt, "strip");
       for (const hex of s.best) swatch(hex, strip, hex, "strip-cell");
@@ -181,6 +194,10 @@
       gauge(gauges, "Intensidad", r.axes.c, "Suave", "Medio", "Intenso");
       if (r.traits.contrast) el("p", `Contraste entre tu piel y tu pelo: ${r.traits.contrast}`, gauges, "hint");
 
+      if (r.quality.issues.length) {
+        const warn = el("ul", "", rep, "tips warn");
+        for (const t of r.quality.issues) el("li", "⚠ " + t, warn);
+      }
       const alt = el("div", "", rep, "chips season-chips");
       el("span", "¿No te convence? Prueba:", alt, "hint");
       for (const t of r.ranking) {
@@ -243,7 +260,7 @@
       const how = el("details", "", rep);
       el("summary", "¿Cómo se ha calculado?", how);
       const f = (v) => (v === null || v === undefined ? "—" : v.toFixed(2));
-      el("p", `Foto → subtono ${f(r.photo.w)}, profundidad ${f(r.photo.d)}, intensidad ${f(r.photo.c)}. Test → ${f(r.quiz.w)}, ${f(r.quiz.d)}, ${f(r.quiz.c)}. Se mezclan 40 % foto y 60 % test porque la luz de la foto engaña más que las respuestas. ${st.samples.wb ? "Con balance de blancos." : "Sin balance de blancos: toca algo blanco para corregir la luz."}`, how, "hint");
+      el("p", `Foto → subtono ${f(r.photo.w)}, profundidad ${f(r.photo.d)}, intensidad ${f(r.photo.c)}. Test → ${f(r.quiz.w)}, ${f(r.quiz.d)}, ${f(r.quiz.c)}. La foto pesa ${Math.round(40 * r.quality.weight)} % y el test el resto, porque la luz engaña más que las respuestas${r.quality.weight < 1 ? " (menos de 40 % por la calidad de la foto)" : ""}. ${st.samples.wb ? "Balance de blancos con el blanco que tocaste." : st.est ? "Balance de blancos automático con toda la foto menos tu cara; si tienes algo blanco cerca, tócalo y será más preciso." : "Sin balance de blancos."}`, how, "hint");
     }
   }
 
@@ -260,7 +277,9 @@
 
   app.on("photo", (src) => {
     st.samples = {}; st.points = {}; st.auto = false; st.pick = null;
-    app.wbGains = null;
+    st.est = null;
+    if (src) estimateLight();
+    app.wbGains = gains(); app.wbManual = false;
     $("color-box").disabled = !src;
     if (src) autoSkin();
     update();

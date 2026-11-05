@@ -3,7 +3,7 @@
 // entonces se guardan solo las respuestas de los tests en localStorage, nunca la foto.
 (function () {
   "use strict";
-  const { mask: maskLib } = window.FA;
+  const { mask: maskLib, color } = window.FA;
   const $ = (id) => document.getElementById(id);
   const WORK_SIDE = 1400;
   const NO_STAGE = new Set(["estilo", "piel", "resumen"]);
@@ -136,7 +136,11 @@
   app.getFaceBox = function () {
     if (app.faceBox === undefined && app.source) {
       const { data, width: w, height: h } = app.source;
-      app.faceBox = maskLib.detect(data, w, h).faceBox;
+      // la piel se busca con la luz ya corregida (con una lámpara, la pared anaranjada pasaba por cara);
+      // la luz sale de los bordes de la foto, porque en un selfie la cara del centro la teñiría
+      const center = { x0: 0.25 * w, x1: 0.75 * w, y0: 0.1 * h, y1: 0.9 * h };
+      const est = color.estimateIlluminant(data, w, h, 4, center) || color.estimateIlluminant(data, w, h);
+      app.faceBox = maskLib.detect(est ? color.correctImage(data, color.autoGains(est.illuminant)) : data, w, h).faceBox;
     }
     return app.faceBox;
   };

@@ -131,6 +131,7 @@ main.nostage .report { grid-column: 2; grid-row: 1; }
 .sec-title { margin: 26px 0 10px; font-size: 18px; }
 .avoid-title, .later-title { margin: 14px 0 8px; font-size: 14px; color: var(--muted); }
 .tips { margin-top: 14px !important; }
+.tips.warn { list-style: none; padding: 10px 12px; border-left: 3px solid var(--mid); background: var(--surface-2); border-radius: var(--radius); }
 .hint a { color: inherit; }
 
 .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin: 8px 0 16px; }

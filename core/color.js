@@ -93,6 +93,68 @@
   }
   const applyGains = (rgb, gains) => (gains ? rgb.map((c, i) => fromLinear(toLinear(c) * gains[i])) : rgb.slice());
 
+  // ---- balance de blancos automático y calidad de la foto ----
+  // «Shades of gray» (Finlayson y Trezzi, 2004): la luz es la norma de Minkowski p=6 de la foto en RGB
+  // lineal. Una luz que multiplica los canales multiplica igual la estimación, así que la corrección
+  // deja la piel igual con lámpara amarilla o con luz de ventana. Falla si la escena entera es de un color.
+  const P = 6;
+  const LIN_P = Float64Array.from({ length: 256 }, (_, i) => toLinear(i) ** P);
+
+  /**
+   * Color de la luz (RGB lineal con media 1), fracción de píxeles quemados y brillo medio (0..255).
+   * Ignora quemados, casi negros y la caja `skip` ({x0,y0,x1,y1}, la cara): en un selfie la piel ocupa
+   * mucho y, como es rojiza, haría pasar por cálida una luz neutra. null si no quedan píxeles útiles.
+   */
+  function estimateIlluminant(data, w, h, step = 4, skip = null) {
+    const s = [0, 0, 0];
+    let n = 0, total = 0, clipped = 0, luma = 0;
+    for (let y = 0; y < h; y += step) for (let x = 0; x < w; x += step) {
+      const i = 4 * (y * w + x), r = data[i], g = data[i + 1], b = data[i + 2];
+      total++;
+      luma += 0.299 * r + 0.587 * g + 0.114 * b;
+      if (r >= 250 || g >= 250 || b >= 250) { clipped++; continue; }
+      if (r + g + b < 30) continue;
+      if (skip && x >= skip.x0 && x < skip.x1 && y >= skip.y0 && y < skip.y1) continue;
+      s[0] += LIN_P[r]; s[1] += LIN_P[g]; s[2] += LIN_P[b]; n++;
+    }
+    if (n < 50) return null;
+    const e = s.map((v) => (v / n) ** (1 / P));
+    const m = (e[0] + e[1] + e[2]) / 3;
+    return { illuminant: e.map((v) => v / m), clipped: clipped / total, brightness: luma / total };
+  }
+
+  /** Ganancias que neutralizan esa luz, limitadas para no inventar colores con escenas raras. */
+  const autoGains = (illuminant) => illuminant.map((c) => clamp(1 / c, 0.4, 2.5));
+
+  /** Copia RGBA con las ganancias aplicadas (una tabla por canal: rápido en fotos grandes). */
+  function correctImage(data, gains) {
+    const lut = gains.map((g) => Uint8ClampedArray.from({ length: 256 }, (_, i) => fromLinear(toLinear(i) * g)));
+    const out = new Uint8ClampedArray(data.length);
+    for (let i = 0; i < data.length; i += 4) {
+      out[i] = lut[0][data[i]]; out[i + 1] = lut[1][data[i + 1]]; out[i + 2] = lut[2][data[i + 2]]; out[i + 3] = data[i + 3];
+    }
+    return out;
+  }
+
+  /**
+   * Cuánto fiarse de la foto (0..1) y por qué. Con blanco tocado a mano la luz no resta.
+   * @param {{illuminant:number[], clipped:number, brightness:number}|null} est  de estimateIlluminant
+   */
+  function photoQuality(est, manualWhite = false) {
+    if (!est) return { weight: 1, cast: 0, issues: [] };
+    let weight = 1;
+    const issues = [];
+    const cast = Math.max(...est.illuminant.map((c) => Math.abs(c - 1)));
+    if (!manualWhite && cast > 0.25) {
+      const warm = est.illuminant[0] > est.illuminant[2];
+      issues.push(`La luz es muy ${warm ? "amarilla o anaranjada (lámpara)" : "azulada (sombra o pantalla)"}: se ha corregido, pero mejor junto a una ventana de día.`);
+      weight *= cast > 0.45 ? 0.7 : 0.85; // la corrección funciona con luz uniforme; el riesgo es la luz mezclada
+    }
+    if (est.clipped > 0.05) { issues.push("Hay zonas quemadas por exceso de luz o flash."); weight *= 0.7; }
+    if (est.brightness < 60) { issues.push("La foto está oscura y los colores salen más profundos de lo que son."); weight *= 0.6; }
+    return { weight, cast, issues };
+  }
+
   // ---- test ----
   // Cada respuesta suma a uno o varios ejes: w = calidez (+cálido), d = profundidad (+oscuro), c = claridad (+intenso).
   const QUIZ = [
@@ -162,12 +224,15 @@
     return { ...out, contrast };
   }
 
-  /** Mezcla foto (40 %) y test (60 %); la luz de la foto engaña más que las respuestas. */
-  function combineAxes(photo, quiz) {
-    const out = {};
+  /**
+   * Mezcla foto (40 %) y test (60 %); la luz de la foto engaña más que las respuestas.
+   * `weight` (0..1, de photoQuality) baja aún más el peso de una foto con mala luz.
+   */
+  function combineAxes(photo, quiz, weight = 1) {
+    const out = {}, pw = 0.4 * weight;
     for (const k of ["w", "d", "c"]) {
       const p = photo ? photo[k] : null, q = quiz ? quiz[k] : null;
-      out[k] = p !== null && q !== null ? 0.4 * p + 0.6 * q : p ?? q ?? 0;
+      out[k] = p !== null && q !== null ? pw * p + (1 - pw) * q : p ?? q ?? 0;
     }
     return out;
   }
@@ -294,6 +359,8 @@
     return scored.sort((a, b) => b.score - a.score);
   }
 
+  const CLOSE = 6; // puntos de porcentaje
+
   const word = (v, neg, mid, pos) => (v > 0.25 ? pos : v < -0.25 ? neg : mid);
 
   /**
@@ -301,16 +368,19 @@
    * @param {{skin?:number[], hair?:number[], eyes?:number[]}} lab  medidas en Lab (ya balanceadas)
    * @param {object} answers  respuestas del test {id: v}
    * @param {string} [forced] id de estación elegida a mano
+   * @param {{weight:number, issues:string[]}} [quality] de photoQuality
    */
-  function analyze(lab, answers, forced) {
+  function analyze(lab, answers, forced, quality = { weight: 1, issues: [] }) {
     const photo = photoAxes(lab);
     const quiz = quizAxes(answers);
-    const axes = combineAxes(photo, quiz);
+    const axes = combineAxes(photo, quiz, quality.weight);
     const ranking = classify(axes);
     const id = forced && SEASONS[forced] ? forced : ranking[0].id;
+    // en la frontera entre dos estaciones un cambio de luz invisible las intercambia: se dicen las dos
+    const between = !forced && ranking[0].pct - ranking[1].pct < CLOSE ? ranking[1].name : null;
     const s = SEASONS[id];
     return {
-      axes, photo, quiz, ranking: ranking.slice(0, 3).map(({ id, name, pct }) => ({ id, name, pct })),
+      axes, photo, quiz, quality, between, ranking: ranking.slice(0, 3).map(({ id, name, pct }) => ({ id, name, pct })),
       season: { id, name: s.name, family: s.family, desc: s.desc, best: s.best, neutrals: s.neutrals, avoid: s.avoid },
       traits: {
         undertone: word(axes.w, "Frío", "Neutro", "Cálido"),
@@ -353,7 +423,7 @@
 
   return {
     rgbToLab, labToRgb, hexToRgb, rgbToHex, hexToLab, chroma, hue, deltaE,
-    sampleCircle, whiteBalance, applyGains,
+    sampleCircle, whiteBalance, applyGains, estimateIlluminant, autoGains, correctImage, photoQuality,
     QUIZ, quizAxes, photoAxes, combineAxes, SEASONS, METALS, MAKEUP, classify, analyze, judge, jewelry, makeup,
   };
 });

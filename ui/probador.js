@@ -107,7 +107,7 @@
       el("h3", r.verdict === "si" ? "Otros de tu paleta que combinan:" : "Busca mejor uno de estos:", alt, "sec-title");
       const row = el("div", "", alt, "swatches");
       for (const a of r.alternatives) { const c = el("div", "", row, "sw-cell"); swatch(a, c, a, "swatch big"); el("code", a, c); }
-      el("p", `Comparado con tu paleta ${s.name}. La luz de la foto cambia los colores: ${app.wbGains ? "se aplicó tu balance de blancos." : "para más precisión, toca algo blanco en la pestaña «Color»."}`, rep, "hint");
+      el("p", `Comparado con tu paleta ${s.name}. La luz de la foto cambia los colores: ${app.wbManual ? "se aplicó tu balance de blancos." : app.wbGains ? "se corrigió automáticamente; para más precisión, toca algo blanco en la pestaña «Color»." : "para más precisión, toca algo blanco en la pestaña «Color»."}`, rep, "hint");
       if (st.history.length > 1) {
         el("h3", "Lo último que has probado", rep, "sec-title");
         const hist = el("div", "", rep, "history");
