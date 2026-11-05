@@ -29,7 +29,7 @@
   <button role="tab" id="tab-cara" data-tab="cara" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="12" rx="7" ry="9"/><path d="M9.5 15.5c1.4 1 3.6 1 5 0"/></svg><span>Cara</span></button>
   <button role="tab" id="tab-estilo" data-tab="estilo" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l4 3 4-3 4 3-2 4h-2v11H8V10H6L4 6z"/></svg><span>Estilo</span></button>
   <button role="tab" id="tab-probador" data-tab="probador" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="6"/><path d="M9 8c1-1.5 2.5-2 4-1.5"/></svg><span>Probador</span></button>
-  <button role="tab" id="tab-piel" data-tab="piel" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6v4H9z"/><path d="M8 7h8l1 4v10H7V11z"/></svg><span>Piel</span></button>
+  <button role="tab" id="tab-piel" data-tab="piel" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6v4H9z"/><path d="M8 7h8l1 4v10H7V11z"/></svg><span>Piel y pelo</span></button>
   <button role="tab" id="tab-resumen" data-tab="resumen" aria-selected="false"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l3 3v15H6z"/><path d="M9 11h6"/><path d="M9 15h6"/></svg><span>Resumen</span></button>
 </nav>
 
@@ -185,6 +185,7 @@
     <div class="panel" data-panel="piel" hidden>
       <fieldset><legend>Tu piel</legend><div id="piel-quiz" class="quiz"></div></fieldset>
       <fieldset><legend>¿Qué quieres mejorar?</legend><div id="piel-concerns" class="chips" role="group" aria-label="Preocupaciones"></div></fieldset>
+      <fieldset><legend>Tu pelo</legend><div id="cabello-quiz" class="quiz"></div></fieldset>
     </div>
 
     <!-- Resumen -->
@@ -205,7 +206,7 @@
   <section class="report" id="report-cara" data-report="cara" hidden aria-live="polite" aria-label="Tu cara"></section>
   <section class="report" id="report-estilo" data-report="estilo" hidden aria-live="polite" aria-label="Tu estilo"></section>
   <section class="report" id="report-probador" data-report="probador" hidden aria-live="polite" aria-label="Resultado del probador"></section>
-  <section class="report" id="report-piel" data-report="piel" hidden aria-live="polite" aria-label="Tu rutina de piel"></section>
+  <section class="report" id="report-piel" data-report="piel" hidden aria-live="polite" aria-label="Tu rutina de piel y pelo"></section>
   <section class="report" id="report-resumen" data-report="resumen" hidden aria-label="Tu ficha"></section>
 </main>
 
@@ -217,6 +218,7 @@
 <script src="core/dibujos.js"></script>
 <script src="core/estilo.js"></script>
 <script src="core/piel.js"></script>
+<script src="core/cabello.js"></script>
 <script src="core/ficha.js"></script>
 <script src="core/pelo.js"></script>
 <script src="ui/app.js"></script>
@@ -226,6 +228,7 @@
 <script src="ui/estilo.js"></script>
 <script src="ui/probador.js"></script>
 <script src="ui/pelo.js"></script>
+<script src="ui/cabello.js"></script>
 <script src="ui/piel.js"></script>
 <script src="ui/resumen.js"></script>
 <script src="i18n/content-en.js"></script>

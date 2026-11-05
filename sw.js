@@ -2,14 +2,14 @@
 // Solo archivos de la app (nunca fotos: no pasan por la red). Red primero, para que los cambios se vean;
 // si no hay servidor, sirve lo guardado. Su CSP propia permite connect-src 'self' (ver scripts/serve.js).
 "use strict";
-const CACHE = "faceora-v6";
+const CACHE = "faceora-v7";
 const SHELL = [
   "./", "index.html", "styles.css", "manifest.webmanifest",
   "assets/icon.svg", "assets/icon-192.png", "assets/icon-512.png",
   "assets/fonts/cormorant-garamond.woff2", "assets/fonts/cormorant-garamond-italic.woff2", "assets/fonts/manrope.woff2",
   "core/ops.js", "core/mask.js", "core/png.js",
-  "core/asesor.js", "core/color.js", "core/dibujos.js", "core/estilo.js", "core/piel.js", "core/ficha.js",
-  "core/pelo.js", "ui/app.js", "ui/mp.js", "ui/cara.js", "ui/color.js", "ui/estilo.js", "ui/probador.js", "ui/pelo.js", "ui/piel.js", "ui/resumen.js",
+  "core/asesor.js", "core/color.js", "core/dibujos.js", "core/estilo.js", "core/piel.js", "core/cabello.js", "core/ficha.js",
+  "core/pelo.js", "ui/app.js", "ui/mp.js", "ui/cara.js", "ui/color.js", "ui/estilo.js", "ui/probador.js", "ui/pelo.js", "ui/cabello.js", "ui/piel.js", "ui/resumen.js",
   "i18n/content-en.js", "ui/i18n-dict.js", "ui/i18n.js", "ui/idioma.js",
 ];
 // El modelo de cara (~18 MB) se guarda la primera vez que se usa, no al instalar.

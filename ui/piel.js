@@ -1,4 +1,5 @@
-// Pestaña "Piel": test → rutina de mañana y noche con nivel de evidencia y fuentes de cada paso.
+// Pestaña "Piel": test → rutina de mañana y noche con nivel de evidencia y fuentes de cada paso; al final,
+// la sección de pelo de ui/cabello.js.
 (function () {
   "use strict";
   const { piel, app } = window.FA;
@@ -98,11 +99,13 @@
       el("h4", "✖ " + s.name, c);
       el("p", s.why, c);
     }
+    if (app.cabello) app.cabello.render(rep);
     const legend = el("div", "", rep, "legend");
     for (const k of Object.keys(piel.LEVELS)) { const p = el("p", "", legend); badge(k, p); p.append(" " + piel.LEVELS[k].desc); }
     el("p", "Los productos son ejemplos que contienen el ingrediente en la concentración estudiada; la evidencia es del ingrediente, no de la marca. Comprueba qué se vende en tu país. No es consejo médico: granos dolorosos, manchas que cambian o rojez persistente → dermatólogo.", rep, "hint");
   }
 
+  app.renderPiel = render;
   app.on("profile", (k) => { if (k === "sexo") render(); });
   render();
 })();
