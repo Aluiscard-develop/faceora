@@ -236,6 +236,7 @@
       el("p", "Tu estación", txt, "kicker");
       el("h2", s.name, txt);
       if (r.between) el("p", `Estás entre ${s.name} y ${r.between}: prueba las dos con el drapeado de abajo.`, txt, "kicker");
+      if (r.photoOnly) el("p", `Solo con la foto es orientativo: al validarlo con 478 fotos reales, la misma persona sacó la misma estación en la mitad de sus fotos. Responde el test y compara con el drapeado. También posibles: ${r.ranking.slice(1).map((x) => x.name).join(" y ")}.`, txt, "market-note");
       el("p", s.desc, txt);
       const strip = el("div", "", txt, "strip");
       for (const hex of s.best) swatch(hex, strip, hex, "strip-cell");

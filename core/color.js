@@ -94,11 +94,16 @@
   const applyGains = (rgb, gains) => (gains ? rgb.map((c, i) => fromLinear(toLinear(c) * gains[i])) : rgb.slice());
 
   // ---- balance de blancos automático y calidad de la foto ----
-  // «Shades of gray» (Finlayson y Trezzi, 2004): la luz es la norma de Minkowski p=6 de la foto en RGB
-  // lineal. Una luz que multiplica los canales multiplica igual la estimación, así que la corrección
-  // deja la piel igual con lámpara amarilla o con luz de ventana. Falla si la escena entera es de un color.
+  // Mezcla (media geométrica) de dos estimaciones de la luz en RGB lineal, sin la cara:
+  //  · «Shades of gray» (Finlayson y Trezzi, 2004): norma de Minkowski p=6 de toda la escena.
+  //  · Parche blanco: media del 3 % de píxeles más claros (sin quemados), que suelen ser superficies blancas.
+  // Validado (D-35) con 478 fotos reales de 60 personas (LFW) y 30 caras de estudio con fondos y luces
+  // sintéticos: la mezcla falla menos que cada una por separado (fiabilidad del tono de piel entre fotos de
+  // la misma persona 0,18 frente a 0,08 con solo «shades of gray»; error en estudio 1,4° frente a 1,9°).
   const P = 6;
   const LIN_P = Float64Array.from({ length: 256 }, (_, i) => toLinear(i) ** P);
+  const LIN = Float64Array.from({ length: 256 }, (_, i) => toLinear(i));
+  const unit = (e) => { const m = (e[0] + e[1] + e[2]) / 3; return e.map((v) => v / m); };
 
   /**
    * Color de la luz (RGB lineal con media 1), fracción de píxeles quemados y brillo medio (0..255).
@@ -106,7 +111,7 @@
    * mucho y, como es rojiza, haría pasar por cálida una luz neutra. null si no quedan píxeles útiles.
    */
   function estimateIlluminant(data, w, h, step = 4, skip = null) {
-    const s = [0, 0, 0];
+    const s = [0, 0, 0], sums = [], idx = [];
     let n = 0, total = 0, clipped = 0, luma = 0;
     for (let y = 0; y < h; y += step) for (let x = 0; x < w; x += step) {
       const i = 4 * (y * w + x), r = data[i], g = data[i + 1], b = data[i + 2];
@@ -116,15 +121,28 @@
       if (r + g + b < 30) continue;
       if (skip && x >= skip.x0 && x < skip.x1 && y >= skip.y0 && y < skip.y1) continue;
       s[0] += LIN_P[r]; s[1] += LIN_P[g]; s[2] += LIN_P[b]; n++;
+      sums.push(LIN[r] + LIN[g] + LIN[b]); idx.push(i);
     }
     if (n < 50) return null;
-    const e = s.map((v) => (v / n) ** (1 / P));
-    const m = (e[0] + e[1] + e[2]) / 3;
-    return { illuminant: e.map((v) => v / m), clipped: clipped / total, brightness: luma / total };
+    const sog = unit(s.map((v) => (v / n) ** (1 / P)));
+    // umbral del 3 % más claro sin ordenar todo: el percentil 97 de las sumas
+    const order = Float64Array.from(sums).sort(), cut = order[Math.floor(order.length * 0.97)];
+    const top = [0, 0, 0];
+    let k = 0;
+    for (let j = 0; j < sums.length; j++) if (sums[j] >= cut) { const i = idx[j]; top[0] += LIN[data[i]]; top[1] += LIN[data[i + 1]]; top[2] += LIN[data[i + 2]]; k++; }
+    const bright = unit(top.map((v) => v / k));
+    return { illuminant: unit(sog.map((v, c) => Math.sqrt(v * bright[c]))), clipped: clipped / total, brightness: luma / total };
   }
 
-  /** Ganancias que neutralizan esa luz, limitadas para no inventar colores con escenas raras. */
-  const autoGains = (illuminant) => illuminant.map((c) => clamp(1 / c, 0.4, 2.5));
+  /**
+   * Ganancias que neutralizan esa luz, limitadas para no inventar colores con escenas raras. Conservan la
+   * luminancia de un gris: sin eso, corregir una luz anaranjada oscurecía la piel y la hacía parecer más
+   * profunda (en la validación, +1,8 de L* con lámpara; ahora 0,2).
+   */
+  const autoGains = (illuminant) => {
+    const y = 0.2126 * illuminant[0] + 0.7152 * illuminant[1] + 0.0722 * illuminant[2];
+    return illuminant.map((c) => clamp(y / c, 0.4, 2.5));
+  };
 
   /** Copia RGBA con las ganancias aplicadas (una tabla por canal: rápido en fotos grandes). */
   function correctImage(data, gains) {
@@ -416,8 +434,11 @@
     // en la frontera entre dos estaciones un cambio de luz invisible las intercambia: se dicen las dos
     const between = !forced && ranking[0].pct - ranking[1].pct < CLOSE ? ranking[1].name : null;
     const s = SEASONS[id];
+    // D-35: con fotos reales, la misma persona sacó la misma estación en ~la mitad de sus fotos; sin test,
+    // el resultado se presenta como orientativo.
+    const photoOnly = !forced && (photo.w !== null || photo.d !== null) && !Object.values(answers || {}).some(Boolean);
     return {
-      axes, photo, quiz, quality, between, ranking: ranking.slice(0, 3).map(({ id, name, pct }) => ({ id, name, pct })),
+      axes, photo, quiz, quality, between, photoOnly, ranking: ranking.slice(0, 3).map(({ id, name, pct }) => ({ id, name, pct })),
       season: { id, name: s.name, family: s.family, desc: s.desc, best: s.best, neutrals: s.neutrals, avoid: s.avoid },
       traits: {
         undertone: word(axes.w, "Frío", "Neutro", "Cálido"),
